@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useGetDoctorProfileQuery } from '../../store/services/DoctorApi';
 
 const DoctorDashboard = () => {
+  const { data: profileData, isLoading: profileLoading } = useGetDoctorProfileQuery();
   const [dashboardData, setDashboardData] = useState({
     todayAppointments: 0,
     completedToday: 0,
@@ -15,13 +17,13 @@ const DoctorDashboard = () => {
 
   // APIs simulation - baad mein real APIs se replace hoga
   useEffect(() => {
-    // Simulating API calls
     const fetchDashboardData = async () => {
       try {
-        // API: GET /doctors/profile (for basic info)
-        // API: GET /appointments/doctor/my-appointments (for appointments)
+        // Yahan actual API calls honge
+        // GET /api/doctors/appointments - for appointments
+        // GET /api/doctors/stats - for statistics
         
-        // Dummy data - APIs response ke hisaab se
+        // Temporary dummy data
         setDashboardData({
           todayAppointments: 8,
           completedToday: 5,
@@ -79,12 +81,10 @@ const DoctorDashboard = () => {
   };
 
   const handleStartConsultation = (appointmentId, patientId) => {
-    // Redirect to appointment details or start consultation
     console.log('Starting consultation for:', appointmentId, patientId);
-    // Baad mein navigation hoga
   };
 
-  if (loading) {
+  if (loading || profileLoading) {
     return (
       <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
@@ -99,12 +99,14 @@ const DoctorDashboard = () => {
     );
   }
 
+  const doctorName = profileData?.data?.userId?.name || 'Doctor';
+
   return (
     <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
       <div className="px-4 py-6 sm:px-0">
         {/* Welcome Section */}
         <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Welcome back, Dr. Smith! 👨‍⚕️</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Welcome back, {doctorName}! 👨‍⚕️</h1>
           <p className="text-gray-600">Here's your schedule and practice overview for today.</p>
         </div>
 
@@ -198,7 +200,7 @@ const DoctorDashboard = () => {
                   className="bg-green-50 border border-green-200 rounded-lg p-4 text-center hover:bg-green-100 transition duration-200"
                 >
                   <div className="text-green-600 text-lg mb-2">⏰</div>
-                  <div className="font-medium text-green-900 text-sm">Set Availability</div>
+                  <div className="font-medium text-green-900 text-sm"> Availability</div>
                 </Link>
                 
                 <Link 

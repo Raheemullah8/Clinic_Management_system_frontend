@@ -14,22 +14,42 @@ export const AuthApi = createApi({
          url:"/auth/login",
          method:"POST",
          body:data,
+         credentials:"include",
 
         }),
         invalidatesTags:["Auth"],
     }),
 
     registerUser: builder.mutation({
-    query:(data)=>({
+    query:(formData)=>({
         url:"/auth/register",
         method:"POST",
-        body:data,
+        body: formData,
+        credentials:"include",
     }),
     invalidatesTags:["Auth"],
+    }),
+
+    logoutUser: builder.mutation({
+        query:() =>({
+            url:"/auth/logout",
+            method:"POST",
+            credentials:"include",
+        })
+    }),
+    getUser: builder.query({
+        query:()=>({
+            url:"/auth/getUser",
+            method:"GET",
+            credentials:"include",
+        }),
+        providesTags:["Auth"],
     })
+
+    
    }),
    
          
 })
 
-export const  {useLoginUserMutation,useRegisterUserMutation} = AuthApi;
+export const  {useLoginUserMutation,useRegisterUserMutation,useLogoutUserMutation,useGetUserQuery} = AuthApi;

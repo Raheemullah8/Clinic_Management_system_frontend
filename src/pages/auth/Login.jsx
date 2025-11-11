@@ -24,13 +24,15 @@ const Login = () => {
       }));
       toast.success("Login Successful");
 
-      // Role-based redirect
-      if (user.role === 'doctor') {
-        navigate('/doctor/dashboard');
-      } else if (user.role === 'admin') {
-        navigate('/admin/dashboard');
-      } else {
-        navigate('/patient/dashboard');
+      switch(response.user.role) {
+        case "doctor":
+          navigate("/doctor/dashboard");
+          break;
+        case "admin":
+          navigate("/admin/dashboard");
+          break;
+        default:
+          navigate("/patient/dashboard");
       }
 
     } catch (error) {

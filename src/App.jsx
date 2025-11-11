@@ -20,6 +20,9 @@ import DoctorAvailability from "./pages/doctor/Availability.jsx";
 import ManageDoctors from "./pages/admin/ManageDoctors.jsx";
 import ManageAppointments from "./pages/admin/Appointments.jsx";
 import ManagePatients from "./pages/admin/ManagePatients.jsx";
+import Unauthorized from "./pages/Unauthorized.jsx";
+import ProtectedRoute from "./components/ProtectedRoute.jsx";
+import PublicRoute from "./components/PublicRoute.jsx";
 
 function App() {
   return (
@@ -28,33 +31,54 @@ function App() {
 
         {/* Public Routes */}
         <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+        <Route path="/login" element={
+          <PublicRoute>
+            <Login />
+          </PublicRoute>
+          } />
+        <Route path="/register" element={
+          <PublicRoute>
+          <Register />
+          </PublicRoute>
+          } />
+        <Route path="/unauthorized" element={<Unauthorized/>} />
 
         {/* Patient Routes */}
-        <Route path="/patient" element={<Layout />}>
+        <Route path="/patient" element={
+          <ProtectedRoute requirRole="patient">
+            <Layout />
+          </ProtectedRoute>
+        }>
           <Route path="dashboard" element={<PatientDashboard />} />
           <Route path="appointments" element={<PatientAppointments />} />
           <Route path="medical-records" element={<PatientMedicalRecords />} />
           <Route path="book-appointment" element={<BookAppointment/>} />
-            <Route path="profile" element={<PatientProfile />} />
+          <Route path="profile" element={<PatientProfile />} />
         </Route>
 
         {/* Doctor Routes */}
-        <Route path="/doctor" element={<Layout />}>
+        <Route path="/doctor" element={
+          <ProtectedRoute requirRole="doctor">
+            <Layout />
+          </ProtectedRoute>
+        }>
           <Route path="dashboard" element={<DoctorDashboard />} />
           <Route path="appointments" element={<DoctorAppointments />} />
           <Route path="profile" element={<DoctorProfile />} />
           <Route path="availability" element={<DoctorAvailability />} />
-            <Route path="medical-records" element={<DoctorMedicalRecords />} />
+          <Route path="medical-records" element={<DoctorMedicalRecords />} />
         </Route>
 
         {/* Admin Routes */}
-        <Route path="/admin" element={<Layout />}>
+        <Route path="/admin" element={
+          <ProtectedRoute requirRole="admin">
+            <Layout />
+          </ProtectedRoute>
+        }>
           <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="doctors" element={<ManageDoctors/>} />
-           <Route path="patients" element={<ManagePatients />} />
-            <Route path="appointments" element={<ManageAppointments />} />
+          <Route path="patients" element={<ManagePatients />} />
+          <Route path="appointments" element={<ManageAppointments />} />
         </Route>
 
       </Routes>
