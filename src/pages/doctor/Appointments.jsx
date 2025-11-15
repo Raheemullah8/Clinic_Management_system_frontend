@@ -6,7 +6,7 @@ const DoctorAppointments = () => {
   const { data: doctorQuery, isLoading: queryLoading, isError, error } = useGetDoctorAppointmentsQuery();
   const [updateAppointmentStatus, { isLoading: isUpdating }] = useUpdateAppointmentStatusMutation();
   const [createMedicalRecord, { isLoading: isCreating }] = useCreateMedicalRecordMutation();
-  
+
   const [appointments, setAppointments] = useState([]);
   const [filter, setFilter] = useState('all');
   const [selectedAppointment, setSelectedAppointment] = useState(null);
@@ -60,7 +60,7 @@ const DoctorAppointments = () => {
         id: appointmentId,
         statusData: { status: newStatus }
       }).unwrap();
-      
+
       if (result.success) {
         alert(`Appointment status updated to ${newStatus} successfully!`);
       }
@@ -76,9 +76,9 @@ const DoctorAppointments = () => {
       const confirmComplete = window.confirm(
         'Appointment must be completed before creating medical record. Mark as completed?'
       );
-      
+
       if (!confirmComplete) return;
-      
+
       try {
         await handleStatusUpdate(appointment._id, 'completed');
         // Wait for status update to complete, then open modal
@@ -119,7 +119,7 @@ const DoctorAppointments = () => {
         appointmentId: selectedAppointment._id,
         diagnosis: medicalRecordData.diagnosis,
         symptoms: medicalRecordData.symptoms.filter(s => s.trim() !== ''),
-        prescription: medicalRecordData.prescription.filter(p => 
+        prescription: medicalRecordData.prescription.filter(p =>
           p.medicine.trim() !== '' && p.dosage.trim() !== ''
         ),
         testsRecommended: medicalRecordData.testsRecommended.filter(t => t.trim() !== ''),
@@ -128,11 +128,11 @@ const DoctorAppointments = () => {
 
       // Create medical record
       const result = await createMedicalRecord(medicalRecordPayload).unwrap();
-      
+
       if (result.success) {
         // Update appointment status to completed
         await handleStatusUpdate(selectedAppointment._id, 'completed');
-        
+
         setShowMedicalRecord(false);
         alert('Medical record created successfully!');
       }
@@ -160,7 +160,7 @@ const DoctorAppointments = () => {
   };
 
   const removeSymptom = (index) => {
-    handleMedicalRecordChange('symptoms', 
+    handleMedicalRecordChange('symptoms',
       medicalRecordData.symptoms.filter((_, i) => i !== index)
     );
   };
@@ -173,7 +173,7 @@ const DoctorAppointments = () => {
 
   const addPrescription = () => {
     handleMedicalRecordChange('prescription', [
-      ...medicalRecordData.prescription, 
+      ...medicalRecordData.prescription,
       { medicine: '', dosage: '', frequency: '', duration: '' }
     ]);
   };
@@ -283,61 +283,55 @@ const DoctorAppointments = () => {
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => setFilter('all')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                filter === 'all' 
-                  ? 'bg-blue-600 text-white' 
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === 'all'
+                  ? 'bg-blue-600 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+                }`}
             >
               All Appointments
             </button>
             <button
               onClick={() => setFilter('scheduled')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                filter === 'scheduled' 
-                  ? 'bg-blue-600 text-white' 
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === 'scheduled'
+                  ? 'bg-blue-600 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+                }`}
             >
               Scheduled
             </button>
             <button
               onClick={() => setFilter('confirmed')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                filter === 'confirmed' 
-                  ? 'bg-blue-600 text-white' 
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === 'confirmed'
+                  ? 'bg-blue-600 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+                }`}
             >
               Confirmed
             </button>
             <button
               onClick={() => setFilter('completed')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                filter === 'completed' 
-                  ? 'bg-blue-600 text-white' 
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === 'completed'
+                  ? 'bg-blue-600 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+                }`}
             >
               Completed
             </button>
             <button
               onClick={() => setFilter('cancelled')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                filter === 'cancelled' 
-                  ? 'bg-blue-600 text-white' 
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === 'cancelled'
+                  ? 'bg-blue-600 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+                }`}
             >
               Cancelled
             </button>
             <button
               onClick={() => setFilter('no-show')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                filter === 'no-show' 
-                  ? 'bg-blue-600 text-white' 
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === 'no-show'
+                  ? 'bg-blue-600 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+                }`}
             >
               No Show
             </button>
@@ -365,8 +359,8 @@ const DoctorAppointments = () => {
                             {appointment.patientId?.userId?.name || 'N/A'}
                           </h3>
                           <p className="text-gray-600">
-                            {appointment.patientId?.userId?.dateOfBirth 
-                              ? `${calculateAge(appointment.patientId.userId.dateOfBirth)} years` 
+                            {appointment.patientId?.userId?.dateOfBirth
+                              ? `${calculateAge(appointment.patientId.userId.dateOfBirth)} years`
                               : 'Age N/A'} • {appointment.patientId?.userId?.gender || 'Gender N/A'}
                           </p>
                         </div>
@@ -374,7 +368,7 @@ const DoctorAppointments = () => {
                           {appointment.status}
                         </span>
                       </div>
-                      
+
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600 mb-3">
                         <div>
                           <span className="font-medium">Date & Time:</span>{' '}
@@ -409,7 +403,7 @@ const DoctorAppointments = () => {
                           </button>
                         </>
                       )}
-                      
+
                       {appointment.status === 'confirmed' && (
                         <>
                           <button
@@ -435,7 +429,7 @@ const DoctorAppointments = () => {
                           </button>
                         </>
                       )}
-                      
+
                       {appointment.status === 'completed' && (
                         <button
                           onClick={() => handleCreateMedicalRecord(appointment)}
@@ -444,7 +438,7 @@ const DoctorAppointments = () => {
                           📄 View Medical Record
                         </button>
                       )}
-                      
+
                       {(appointment.status === 'cancelled' || appointment.status === 'no-show') && (
                         <div className="text-gray-500 text-sm italic py-2">
                           No actions available
@@ -479,7 +473,7 @@ const DoctorAppointments = () => {
                     ✕
                   </button>
                 </div>
-                
+
                 <div className="space-y-6">
                   {/* Diagnosis */}
                   <div>
@@ -493,7 +487,7 @@ const DoctorAppointments = () => {
                       required
                     />
                   </div>
-                  
+
                   {/* Symptoms */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Symptoms</label>
@@ -527,7 +521,7 @@ const DoctorAppointments = () => {
                       </button>
                     </div>
                   </div>
-                  
+
                   {/* Prescription */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Prescription</label>
@@ -596,7 +590,7 @@ const DoctorAppointments = () => {
                       </button>
                     </div>
                   </div>
-                  
+
                   {/* Tests Recommended */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Tests Recommended</label>
@@ -630,7 +624,7 @@ const DoctorAppointments = () => {
                       </button>
                     </div>
                   </div>
-                  
+
                   {/* Notes */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Additional Notes</label>
@@ -642,7 +636,7 @@ const DoctorAppointments = () => {
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
-                  
+
                   <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
                     <button
                       type="button"

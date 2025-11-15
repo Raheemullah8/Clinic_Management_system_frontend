@@ -1,133 +1,36 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { 
+  useGetAllAppointmentsQuery,
+  useUpdateAppointmentStatusMutation 
+} from "../../store/services/AppointmentApi.js";
 
 const ManageAppointments = () => {
-  const [appointments, setAppointments] = useState([]);
+  const { data: appointmentsData, isLoading, isError, refetch } = useGetAllAppointmentsQuery();
+  const [updateAppointmentStatus] = useUpdateAppointmentStatusMutation();
+  
+  const appointments = appointmentsData?.data?.appointments || [];
+  const totalAppointments = appointmentsData?.data?.total || 0;
+  
+  console.log("All Appointments Data:", appointmentsData);
+
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('');
-  const [loading, setLoading] = useState(true);
-
-  // APIs simulation - Get all appointments
-  useEffect(() => {
-    const fetchAppointments = async () => {
-      try {
-        // API: GET /admin/appointments
-        const mockAppointments = [
-          {
-            _id: '1',
-            patientId: {
-              _id: 'patient123',
-              userId: {
-                name: 'John Smith',
-                email: 'john.smith@example.com'
-              }
-            },
-            doctorId: {
-              _id: 'doctor123',
-              userId: {
-                name: 'Dr. Sarah Smith',
-                specialization: 'Cardiology'
-              },
-              roomNumber: '301-A'
-            },
-            appointmentDate: '2024-01-15',
-            appointmentTime: '10:00 AM',
-            timeSlot: '10:00 AM - 10:30 AM',
-            status: 'scheduled',
-            reason: 'Heart checkup and consultation',
-            createdAt: '2024-01-10T08:30:00Z'
-          },
-          {
-            _id: '2',
-            patientId: {
-              _id: 'patient124',
-              userId: {
-                name: 'Sarah Johnson',
-                email: 'sarah.j@example.com'
-              }
-            },
-            doctorId: {
-              _id: 'doctor124',
-              userId: {
-                name: 'Dr. Mike Johnson',
-                specialization: 'Dermatology'
-              },
-              roomNumber: '205-B'
-            },
-            appointmentDate: '2024-01-15',
-            appointmentTime: '11:00 AM',
-            timeSlot: '11:00 AM - 11:30 AM',
-            status: 'scheduled',
-            reason: 'Skin allergy treatment',
-            createdAt: '2024-01-08T14:20:00Z'
-          },
-          {
-            _id: '3',
-            patientId: {
-              _id: 'patient125',
-              userId: {
-                name: 'Mike Brown',
-                email: 'mike.brown@example.com'
-              }
-            },
-            doctorId: {
-              _id: 'doctor123',
-              userId: {
-                name: 'Dr. Sarah Smith',
-                specialization: 'Cardiology'
-              },
-              roomNumber: '301-A'
-            },
-            appointmentDate: '2024-01-14',
-            appointmentTime: '02:30 PM',
-            timeSlot: '02:30 PM - 03:00 PM',
-            status: 'completed',
-            reason: 'Follow-up consultation',
-            createdAt: '2024-01-05T09:15:00Z'
-          },
-          {
-            _id: '4',
-            patientId: {
-              _id: 'patient126',
-              userId: {
-                name: 'Emily Davis',
-                email: 'emily.davis@example.com'
-              }
-            },
-            doctorId: {
-              _id: 'doctor125',
-              userId: {
-                name: 'Dr. Emily Brown',
-                specialization: 'Pediatrics'
-              },
-              roomNumber: '102-C'
-            },
-            appointmentDate: '2024-01-13',
-            appointmentTime: '09:00 AM',
-            timeSlot: '09:00 AM - 09:30 AM',
-            status: 'cancelled',
-            reason: 'Annual physical examination',
-            createdAt: '2024-01-03T11:45:00Z'
-          }
-        ];
-        setAppointments(mockAppointments);
-      } catch (error) {
-        console.error('Error fetching appointments:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAppointments();
-  }, []);
 
   // Filter appointments
   const filteredAppointments = appointments.filter(appointment => {
-    const matchesSearch = appointment.patientId.userId.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         appointment.doctorId.userId.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const patientName = appointment.patientId?.userId?.name?.toLowerCase() || '';
+    const doctorName = appointment.doctorId?.userId?.name?.toLowerCase() || '';
+    const search = searchTerm.toLowerCase();
     
+    const matchesSearch = patientName.includes(search) || doctorName.includes(search);
     const matchesStatus = filter === 'all' || appointment.status === filter;
-    const matchesDate = !dateFilter || appointment.appointmentDate === dateFilter;
+    
+    let matchesDate = true;
+    if (dateFilter) {
+      const appointmentDate = new Date(appointment.appointmentDate).toISOString().split('T')[0];
+      matchesDate = appointmentDate === dateFilter;
+    }
     
     return matchesSearch && matchesStatus && matchesDate;
   });
@@ -135,6 +38,7 @@ const ManageAppointments = () => {
   const getStatusColor = (status) => {
     switch (status) {
       case 'scheduled': return 'bg-blue-100 text-blue-800';
+      case 'confirmed': return 'bg-purple-100 text-purple-800';
       case 'completed': return 'bg-green-100 text-green-800';
       case 'cancelled': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
@@ -142,12 +46,7 @@ const ManageAppointments = () => {
   };
 
   const getStatusText = (status) => {
-    switch (status) {
-      case 'scheduled': return 'Scheduled';
-      case 'completed': return 'Completed';
-      case 'cancelled': return 'Cancelled';
-      default: return status;
-    }
+    return status.charAt(0).toUpperCase() + status.slice(1);
   };
 
   const formatDate = (dateString) => {
@@ -160,31 +59,25 @@ const ManageAppointments = () => {
 
   const handleStatusUpdate = async (appointmentId, newStatus) => {
     try {
-      // API: PUT /appointments/:id/status (admin can update any appointment)
-      console.log(`Updating appointment ${appointmentId} to ${newStatus}`);
+      await updateAppointmentStatus({
+        id: appointmentId,
+        statusData: { status: newStatus }
+      }).unwrap();
       
-      // Update local state
-      setAppointments(prev => prev.map(apt => 
-        apt._id === appointmentId ? { ...apt, status: newStatus } : apt
-      ));
-      
-      alert(`Appointment status updated to ${newStatus}`);
+      alert(`Appointment status updated to ${newStatus} ✅`);
+      refetch();
     } catch (error) {
       console.error('Error updating appointment status:', error);
-      alert('Error updating appointment status');
+      alert(error?.data?.message || 'Error updating appointment status');
     }
   };
 
   const handleDeleteAppointment = async (appointmentId, patientName) => {
     if (window.confirm(`Are you sure you want to delete appointment for ${patientName}?`)) {
       try {
-        // API: DELETE /appointments/:id (admin can delete any appointment)
-        console.log('Deleting appointment:', appointmentId);
-        
-        // Remove from local state
-        setAppointments(prev => prev.filter(apt => apt._id !== appointmentId));
-        
-        alert('Appointment deleted successfully!');
+        // Note: You'll need to add delete endpoint in AppointmentApi
+        console.log('Delete functionality not implemented yet. Appointment ID:', appointmentId);
+        alert('Delete functionality coming soon!');
       } catch (error) {
         console.error('Error deleting appointment:', error);
         alert('Error deleting appointment');
@@ -192,7 +85,7 @@ const ManageAppointments = () => {
     }
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
@@ -212,6 +105,22 @@ const ManageAppointments = () => {
     );
   }
 
+  if (isError) {
+    return (
+      <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
+          <p className="text-red-800">Error loading appointments. Please try again.</p>
+          <button 
+            onClick={refetch}
+            className="mt-3 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
       <div className="px-4 py-6 sm:px-0">
@@ -224,14 +133,14 @@ const ManageAppointments = () => {
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <div className="bg-white rounded-lg shadow p-4 text-center">
-            <div className="text-2xl font-bold text-blue-600 mb-1">{appointments.length}</div>
+            <div className="text-2xl font-bold text-blue-600 mb-1">{totalAppointments}</div>
             <div className="text-gray-600 text-sm">Total Appointments</div>
           </div>
           <div className="bg-white rounded-lg shadow p-4 text-center">
             <div className="text-2xl font-bold text-green-600 mb-1">
-              {appointments.filter(a => a.status === 'scheduled').length}
+              {appointments.filter(a => a.status === 'scheduled' || a.status === 'confirmed').length}
             </div>
-            <div className="text-gray-600 text-sm">Scheduled</div>
+            <div className="text-gray-600 text-sm">Active</div>
           </div>
           <div className="bg-white rounded-lg shadow p-4 text-center">
             <div className="text-2xl font-bold text-orange-600 mb-1">
@@ -335,10 +244,13 @@ const ManageAppointments = () => {
                       <div className="flex items-start justify-between mb-3">
                         <div>
                           <h3 className="text-lg font-semibold text-gray-900">
-                            {appointment.patientId.userId.name}
+                            {appointment.patientId?.userId?.name || 'Unknown Patient'}
                           </h3>
                           <p className="text-gray-600">
-                            with {appointment.doctorId.userId.name} ({appointment.doctorId.userId.specialization})
+                            with {appointment.doctorId?.userId?.name || 'Unknown Doctor'} 
+                            {appointment.doctorId?.userId?.specialization && 
+                              ` (${appointment.doctorId.userId.specialization})`
+                            }
                           </p>
                         </div>
                         <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(appointment.status)}`}>
@@ -351,14 +263,16 @@ const ManageAppointments = () => {
                           <span className="font-medium">Date & Time:</span>{' '}
                           {formatDate(appointment.appointmentDate)} at {appointment.appointmentTime}
                         </div>
+                        {appointment.doctorId?.roomNumber && (
+                          <div>
+                            <span className="font-medium">Room:</span> {appointment.doctorId.roomNumber}
+                          </div>
+                        )}
                         <div>
-                          <span className="font-medium">Room:</span> {appointment.doctorId.roomNumber}
-                        </div>
-                        <div>
-                          <span className="font-medium">Slot:</span> {appointment.timeSlot}
+                          <span className="font-medium">Time Slot:</span> {appointment.timeSlot}
                         </div>
                         <div className="md:col-span-2 lg:col-span-3">
-                          <span className="font-medium">Reason:</span> {appointment.reason}
+                          <span className="font-medium">Reason:</span> {appointment.reason || 'Not specified'}
                         </div>
                         <div>
                           <span className="font-medium">Booked on:</span> {formatDate(appointment.createdAt)}
@@ -371,10 +285,16 @@ const ManageAppointments = () => {
                       {appointment.status === 'scheduled' && (
                         <>
                           <button
+                            onClick={() => handleStatusUpdate(appointment._id, 'confirmed')}
+                            className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-purple-700 transition duration-200"
+                          >
+                            Confirm
+                          </button>
+                          <button
                             onClick={() => handleStatusUpdate(appointment._id, 'completed')}
                             className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition duration-200"
                           >
-                            Mark Complete
+                            Complete
                           </button>
                           <button
                             onClick={() => handleStatusUpdate(appointment._id, 'cancelled')}
@@ -384,8 +304,16 @@ const ManageAppointments = () => {
                           </button>
                         </>
                       )}
+                      {appointment.status === 'confirmed' && (
+                        <button
+                          onClick={() => handleStatusUpdate(appointment._id, 'completed')}
+                          className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition duration-200"
+                        >
+                          Mark Complete
+                        </button>
+                      )}
                       <button
-                        onClick={() => handleDeleteAppointment(appointment._id, appointment.patientId.userId.name)}
+                        onClick={() => handleDeleteAppointment(appointment._id, appointment.patientId?.userId?.name)}
                         className="bg-gray-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-700 transition duration-200"
                       >
                         Delete

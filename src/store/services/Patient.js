@@ -9,12 +9,12 @@ export const PatientApi = createApi({
     
     baseQuery: fetchBaseQuery({
         // Assumes the patient router is mounted at a base path like /api/patients
-        baseUrl: `${import.meta.env.VITE_API_BASE_URL}/patients`,
+        baseUrl: `${import.meta.env.VITE_API_BASE_URL}/patient`,
         credentials: "include",
     }),
     
-    // Tag type for caching the patient's own profile data
-    tagTypes: ["PatientProfile"],
+    // Tag types for caching
+    tagTypes: ["PatientProfile", "AllPatients"],
     
     endpoints: (builder) => ({
 
@@ -43,9 +43,44 @@ export const PatientApi = createApi({
             invalidatesTags: ["PatientProfile"],
         }),
 
-        // NOTE on Admin Routes:
-        // The Admin patient routes (GET /, GET /:id, PUT /:id) should ideally 
-        // be handled by the AdminApi service to keep concerns separated.
+        // --- ADMIN ENDPOINTS ---
+        
+        /**
+         * Get all patients (Admin only)
+         * Corresponds to: GET /patients
+         * ✅ Backend route: router.get("/", ...)
+         */
+        getAllPatientsAdmin: builder.query({
+            query: () => "/",
+            providesTags: ["AllPatients"],
+        }),
+
+        /**
+         * Get patient by ID (Admin only)
+         * Corresponds to: GET /patients/:id
+         * ✅ Backend route: router.get("/:id", ...)
+         */
+        getPatientByIdAdmin: builder.query({
+            query: (id) => `/${id}`,
+            providesTags: (result, error, id) => [{ type: "AllPatients", id }],
+        }),
+
+        /**
+         * Update patient by ID (Admin only)
+         * Corresponds to: PUT /patients/:id
+         * ✅ Backend route: router.put("/:id", ...)
+         */
+        updatePatientByIdAdmin: builder.mutation({
+            query: ({ id, data }) => ({
+                url: `/${id}`,
+                method: "PUT",
+                body: data,
+            }),
+            invalidatesTags: (result, error, { id }) => [
+                { type: "AllPatients", id },
+                "AllPatients"
+            ],
+        }),
         
     }),
 });
@@ -54,4 +89,7 @@ export const PatientApi = createApi({
 export const {
     useGetPatientProfileQuery,
     useUpdatePatientProfileMutation,
+    useGetAllPatientsAdminQuery,
+    useGetPatientByIdAdminQuery,
+    useUpdatePatientByIdAdminMutation,
 } = PatientApi;
