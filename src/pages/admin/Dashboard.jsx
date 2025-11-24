@@ -1,332 +1,267 @@
 import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { useGetAllDoctorsQuery } from '../../store/services/Admin';
-import { useGetAllPatientsAdminQuery } from '../../store/services/Patient';
-import { useGetAllAppointmentsQuery } from '../../store/services/AppointmentApi';
 import { useSelector } from 'react-redux';
 
 const AdminDashboard = () => {
-  // Fetch data from APIs
-  const { data: doctorsData, isLoading: doctorsLoading } = useGetAllDoctorsQuery();
-  const { data: patientsData, isLoading: patientsLoading } = useGetAllPatientsAdminQuery();
-  const { data: appointmentsData, isLoading: appointmentsLoading } = useGetAllAppointmentsQuery();
- const user = useSelector((state) =>state?.auth?.user?.data)
-  // Extract data
-  const doctors = doctorsData?.data?.doctors || [];
-  const patients = patientsData?.data?.patients || [];
-  const appointments = appointmentsData?.data?.appointments || [];
-
-  // Helper function to get time ago (must be before useMemo)
-  const getTimeAgo = (date) => {
-    const seconds = Math.floor((new Date() - date) / 1000);
-    
-    let interval = seconds / 31536000;
-    if (interval > 1) return Math.floor(interval) + ' years ago';
-    
-    interval = seconds / 2592000;
-    if (interval > 1) return Math.floor(interval) + ' months ago';
-    
-    interval = seconds / 86400;
-    if (interval > 1) return Math.floor(interval) + ' days ago';
-    
-    interval = seconds / 3600;
-    if (interval > 1) return Math.floor(interval) + ' hours ago';
-    
-    interval = seconds / 60;
-    if (interval > 1) return Math.floor(interval) + ' minutes ago';
-    
-    return Math.floor(seconds) + ' seconds ago';
-  };
-
-  // Calculate stats using useMemo for performance
-  const stats = useMemo(() => {
-    const totalDoctors = doctors.length;
-    const totalPatients = patients.length;
-    const totalAppointments = appointments.length;
-    
-    // Active doctors
-    const activeDoctors = doctors.filter(doc => doc.userId?.isActive).length;
-    
-    // Today's appointments
-    const today = new Date().toDateString();
-    const todayAppointments = appointments.filter(apt => 
-      new Date(apt.appointmentDate).toDateString() === today
-    ).length;
-
-    // This week's patients (last 7 days)
-    const weekAgo = new Date();
-    weekAgo.setDate(weekAgo.getDate() - 7);
-    const newPatientsThisWeek = patients.filter(p => 
-      new Date(p.createdAt) > weekAgo
-    ).length;
-
-    // Appointment completion rate
-    const completedAppointments = appointments.filter(a => a.status === 'completed').length;
-    const appointmentCompletionRate = totalAppointments > 0 
-      ? Math.round((completedAppointments / totalAppointments) * 100)
-      : 0;
-
-    // Recent activities (last 10 appointments)
-    // Create a copy of array before sorting to avoid mutating Redux state
-    const recentActivities = [...appointments]
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-      .slice(0, 10)
-      .map(apt => ({
-        id: apt._id,
-        action: `Appointment ${apt.status}`,
-        patient: apt.patientId?.userId?.name || 'Unknown',
-        doctor: apt.doctorId?.userId?.name || 'Unknown',
-        time: getTimeAgo(new Date(apt.createdAt)),
-        status: apt.status
-      }));
-
-    // Status breakdown
-    const scheduledCount = appointments.filter(a => a.status === 'scheduled').length;
-    const confirmedCount = appointments.filter(a => a.status === 'confirmed').length;
-    const completedCount = appointments.filter(a => a.status === 'completed').length;
-    const cancelledCount = appointments.filter(a => a.status === 'cancelled').length;
-
+  // Get admin user from Redux store
+  const user = useSelector((state) => state.auth.user);
+  
+  // Sample data - Replace with actual API calls
+  const dashboardData = useMemo(() => {
+    // Replace this with your actual API data
     return {
-      totalDoctors,
-      totalPatients,
-      totalAppointments,
-      activeDoctors,
-      todayAppointments,
-      newPatientsThisWeek,
-      appointmentCompletionRate,
-      recentActivities,
-      scheduledCount,
-      confirmedCount,
-      completedCount,
-      cancelledCount
+      totalDoctors: 45,
+      totalPatients: 1247,
+      totalAppointments: 328,
+      pendingApprovals: 8,
+      recentDoctors: [
+        { id: 1, name: 'Dr. Sarah Ahmed', specialization: 'Cardiology', status: 'active', joinedDate: '2024-11-20' },
+        { id: 2, name: 'Dr. Hassan Ali', specialization: 'Pediatrics', status: 'pending', joinedDate: '2024-11-22' },
+        { id: 3, name: 'Dr. Ayesha Khan', specialization: 'Dermatology', status: 'active', joinedDate: '2024-11-18' }
+      ],
+      recentPatients: [
+        { id: 1, name: 'Ahmed Malik', lastVisit: '2024-11-23', status: 'active' },
+        { id: 2, name: 'Fatima Noor', lastVisit: '2024-11-22', status: 'active' },
+        { id: 3, name: 'Bilal Sheikh', lastVisit: '2024-11-21', status: 'active' }
+      ],
+      systemActivities: [
+        { id: 1, action: 'New doctor registration', details: 'Dr. Hassan Ali - Pediatrics', time: '10 minutes ago' },
+        { id: 2, action: 'Appointment completed', details: 'Patient: Ahmed Malik', time: '1 hour ago' },
+        { id: 3, action: 'Doctor profile updated', details: 'Dr. Sarah Ahmed', time: '2 hours ago' },
+        { id: 4, action: 'New patient registered', details: 'Fatima Noor', time: '3 hours ago' }
+      ]
     };
-  }, [doctors, patients, appointments]);
+  }, []);
 
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'scheduled': return '📅';
-      case 'confirmed': return '✅';
-      case 'completed': return '🎉';
-      case 'cancelled': return '❌';
-      default: return '📋';
-    }
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
   };
 
-  // Loading state
-  const isLoading = doctorsLoading || patientsLoading || appointmentsLoading;
+  const getStatusBadge = (status) => {
+    const statusStyles = {
+      active: 'bg-green-100 text-green-800',
+      pending: 'bg-yellow-100 text-yellow-800',
+      inactive: 'bg-gray-100 text-gray-800'
+    };
+    return statusStyles[status] || statusStyles.inactive;
+  };
 
-  if (isLoading) {
-    return (
-      <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="animate-pulse">
-              <div className="h-6 bg-gray-200 rounded w-1/4 mb-4"></div>
-              <div className="h-4 bg-gray-200 rounded w-1/2 mb-8"></div>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                {[1, 2, 3, 4].map(n => (
-                  <div key={n} className="h-32 bg-gray-200 rounded"></div>
+  return (
+    <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+      <div className="px-4 py-6 sm:px-0">
+        
+        {/* Welcome Section */}
+        <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl shadow-lg p-6 mb-8 text-white">
+          <h1 className="text-3xl font-bold mb-2">Welcome back, {user?.data?.name || 'Admin'}! 👨‍💼</h1>
+          <p className="text-indigo-100">Manage your healthcare system from this central dashboard.</p>
+        </div>
+
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          
+          {/* Total Doctors */}
+          <div className="bg-white rounded-xl shadow-lg p-6 text-center transition duration-300 hover:shadow-xl border-t-4 border-blue-500">
+            <div className="text-3xl mb-2">👨‍⚕️</div>
+            <div className="text-3xl font-bold text-blue-700 mb-1">{dashboardData.totalDoctors}</div>
+            <div className="text-gray-600 font-medium">Total Doctors</div>
+            <Link to="/admin/doctors" className="text-blue-600 text-xs mt-2 inline-block hover:underline">
+              View All →
+            </Link>
+          </div>
+
+          {/* Total Patients */}
+          <div className="bg-white rounded-xl shadow-lg p-6 text-center transition duration-300 hover:shadow-xl border-t-4 border-green-500">
+            <div className="text-3xl mb-2">👥</div>
+            <div className="text-3xl font-bold text-green-700 mb-1">{dashboardData.totalPatients}</div>
+            <div className="text-gray-600 font-medium">Total Patients</div>
+            <Link to="/admin/patients" className="text-green-600 text-xs mt-2 inline-block hover:underline">
+              View All →
+            </Link>
+          </div>
+
+          {/* Total Appointments */}
+          <div className="bg-white rounded-xl shadow-lg p-6 text-center transition duration-300 hover:shadow-xl border-t-4 border-purple-500">
+            <div className="text-3xl mb-2">📅</div>
+            <div className="text-3xl font-bold text-purple-700 mb-1">{dashboardData.totalAppointments}</div>
+            <div className="text-gray-600 font-medium">Total Appointments</div>
+            <Link to="/admin/appointments" className="text-purple-600 text-xs mt-2 inline-block hover:underline">
+              View All →
+            </Link>
+          </div>
+
+          {/* Pending Approvals */}
+          <div className="bg-white rounded-xl shadow-lg p-6 text-center transition duration-300 hover:shadow-xl border-t-4 border-orange-500">
+            <div className="text-3xl mb-2">⏳</div>
+            <div className="text-3xl font-bold text-orange-700 mb-1">{dashboardData.pendingApprovals}</div>
+            <div className="text-gray-600 font-medium">Pending Approvals</div>
+            <Link to="/admin/approvals" className="text-orange-600 text-xs mt-2 inline-block hover:underline">
+              Review Now →
+            </Link>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          
+          {/* Quick Actions */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-xl shadow-lg p-6 h-full">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                <span className="mr-2">⚡</span>
+                Quick Actions
+              </h2>
+              <div className="space-y-3">
+                
+                <Link
+                  to="/admin/doctors/add"
+                  className="flex items-center w-full bg-blue-50 border border-blue-200 rounded-lg p-4 hover:bg-blue-100 transition duration-200"
+                >
+                  <div className="text-blue-600 text-2xl mr-3">➕</div>
+                  <div>
+                    <div className="font-medium text-blue-900">Add New Doctor</div>
+                    <div className="text-xs text-blue-700">Register a new doctor</div>
+                  </div>
+                </Link>
+
+                <Link
+                  to="/admin/approvals"
+                  className="flex items-center w-full bg-orange-50 border border-orange-200 rounded-lg p-4 hover:bg-orange-100 transition duration-200"
+                >
+                  <div className="text-orange-600 text-2xl mr-3">✅</div>
+                  <div>
+                    <div className="font-medium text-orange-900">Approve Registrations</div>
+                    <div className="text-xs text-orange-700">{dashboardData.pendingApprovals} pending</div>
+                  </div>
+                </Link>
+
+                <Link
+                  to="/admin/reports"
+                  className="flex items-center w-full bg-purple-50 border border-purple-200 rounded-lg p-4 hover:bg-purple-100 transition duration-200"
+                >
+                  <div className="text-purple-600 text-2xl mr-3">📊</div>
+                  <div>
+                    <div className="font-medium text-purple-900">View Reports</div>
+                    <div className="text-xs text-purple-700">System analytics</div>
+                  </div>
+                </Link>
+                
+                <Link
+                  to="/admin/settings"
+                  className="flex items-center w-full bg-gray-50 border border-gray-200 rounded-lg p-4 hover:bg-gray-100 transition duration-200"
+                >
+                  <div className="text-gray-600 text-2xl mr-3">⚙️</div>
+                  <div>
+                    <div className="font-medium text-gray-900">System Settings</div>
+                    <div className="text-xs text-gray-700">Configure system</div>
+                  </div>
+                </Link>
+              </div>
+            </div>
+          </div>
+
+          {/* Recent Doctors & Patients */}
+          <div className="lg:col-span-2 space-y-6">
+            
+            {/* Recent Doctors */}
+            <div className="bg-white rounded-xl shadow-lg">
+              <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+                <h2 className="text-xl font-semibold text-gray-900 flex items-center">
+                  <span className="mr-2">👨‍⚕️</span>
+                  Recent Doctor Registrations
+                </h2>
+                <Link to="/admin/doctors" className="text-blue-600 text-sm font-medium hover:underline">
+                  View All
+                </Link>
+              </div>
+              <div className="p-4 divide-y divide-gray-100">
+                {dashboardData.recentDoctors.map(doctor => (
+                  <div key={doctor.id} className="py-3 flex justify-between items-center hover:bg-gray-50 transition duration-150 px-2 rounded-lg">
+                    <div className="flex-1">
+                      <div className="flex items-center">
+                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                          <span className="text-blue-600 font-semibold">
+                            {doctor.name.split(' ')[1]?.charAt(0) || doctor.name.charAt(0)}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900">{doctor.name}</p>
+                          <p className="text-sm text-gray-600">{doctor.specialization}</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusBadge(doctor.status)}`}>
+                        {doctor.status.charAt(0).toUpperCase() + doctor.status.slice(1)}
+                      </span>
+                      <p className="text-xs text-gray-500 mt-1">{formatDate(doctor.joinedDate)}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Recent Patients */}
+            <div className="bg-white rounded-xl shadow-lg">
+              <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+                <h2 className="text-xl font-semibold text-gray-900 flex items-center">
+                  <span className="mr-2">👥</span>
+                  Recent Patient Activity
+                </h2>
+                <Link to="/admin/patients" className="text-green-600 text-sm font-medium hover:underline">
+                  View All
+                </Link>
+              </div>
+              <div className="p-4 divide-y divide-gray-100">
+                {dashboardData.recentPatients.map(patient => (
+                  <div key={patient.id} className="py-3 flex justify-between items-center hover:bg-gray-50 transition duration-150 px-2 rounded-lg">
+                    <div className="flex items-center">
+                      <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                        <span className="text-green-600 font-semibold">
+                          {patient.name.split(' ')[0]?.charAt(0)}
+                        </span>
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">{patient.name}</p>
+                        <p className="text-sm text-gray-600">Last visit: {formatDate(patient.lastVisit)}</p>
+                      </div>
+                    </div>
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusBadge(patient.status)}`}>
+                      {patient.status.charAt(0).toUpperCase() + patient.status.slice(1)}
+                    </span>
+                  </div>
                 ))}
               </div>
             </div>
           </div>
         </div>
-      </div>
-    );
-  }
 
-  return (
-    <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-      <div className="px-4 py-6 sm:px-0">
-        {/* Welcome Section */}
-        <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg shadow-lg p-6 mb-6 text-white">
-          <h1 className="text-3xl font-bold mb-2">Welcome back, {user?.name}! 👑</h1>
-          <p className="text-blue-100">Here's your system overview and management dashboard.</p>
-        </div>
-
-        {/* Main Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-          {/* Total Doctors */}
-          <Link to="/admin/doctors" className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition duration-200 transform hover:-translate-y-1">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 font-medium">Total Doctors</p>
-                <p className="text-3xl font-bold text-blue-600 mt-1">{stats.totalDoctors}</p>
-                <p className="text-sm text-green-600 mt-2">
-                  ✓ {stats.activeDoctors} active
-                </p>
-              </div>
-              <div className="text-5xl">👨‍⚕️</div>
-            </div>
-          </Link>
-          
-          {/* Total Patients */}
-          <Link to="/admin/patients" className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition duration-200 transform hover:-translate-y-1">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 font-medium">Total Patients</p>
-                <p className="text-3xl font-bold text-green-600 mt-1">{stats.totalPatients}</p>
-                <p className="text-sm text-blue-600 mt-2">
-                  +{stats.newPatientsThisWeek} this week
-                </p>
-              </div>
-              <div className="text-5xl">👥</div>
-            </div>
-          </Link>
-          
-          {/* Total Appointments */}
-          <Link to="/admin/appointments" className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition duration-200 transform hover:-translate-y-1">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 font-medium">Total Appointments</p>
-                <p className="text-3xl font-bold text-purple-600 mt-1">{stats.totalAppointments}</p>
-                <p className="text-sm text-orange-600 mt-2">
-                  📍 {stats.todayAppointments} today
-                </p>
-              </div>
-              <div className="text-5xl">📅</div>
-            </div>
-          </Link>
-          
-          {/* Completion Rate */}
-          <div className="bg-white rounded-lg shadow-lg p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 font-medium">Completion Rate</p>
-                <p className="text-3xl font-bold text-orange-600 mt-1">{stats.appointmentCompletionRate}%</p>
-                <p className="text-sm text-gray-500 mt-2">
-                  {stats.completedCount} completed
-                </p>
-              </div>
-              <div className="text-5xl">✅</div>
-            </div>
+        {/* System Activities */}
+        <div className="mt-6 bg-white rounded-xl shadow-lg">
+          <div className="p-4 border-b border-gray-200">
+            <h2 className="text-xl font-semibold text-gray-900 flex items-center">
+              <span className="mr-2">📋</span>
+              Recent System Activities
+            </h2>
           </div>
-        </div>
-
-        {/* Appointment Status Breakdown */}
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Appointment Status Overview</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center p-4 bg-blue-50 rounded-lg border border-blue-200">
-              <div className="text-2xl mb-2">📅</div>
-              <div className="text-2xl font-bold text-blue-600">{stats.scheduledCount}</div>
-              <div className="text-sm text-gray-600">Scheduled</div>
-            </div>
-            <div className="text-center p-4 bg-purple-50 rounded-lg border border-purple-200">
-              <div className="text-2xl mb-2">✅</div>
-              <div className="text-2xl font-bold text-purple-600">{stats.confirmedCount}</div>
-              <div className="text-sm text-gray-600">Confirmed</div>
-            </div>
-            <div className="text-center p-4 bg-green-50 rounded-lg border border-green-200">
-              <div className="text-2xl mb-2">🎉</div>
-              <div className="text-2xl font-bold text-green-600">{stats.completedCount}</div>
-              <div className="text-sm text-gray-600">Completed</div>
-            </div>
-            <div className="text-center p-4 bg-red-50 rounded-lg border border-red-200">
-              <div className="text-2xl mb-2">❌</div>
-              <div className="text-2xl font-bold text-red-600">{stats.cancelledCount}</div>
-              <div className="text-sm text-gray-600">Cancelled</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Quick Actions */}
-          <div className="bg-white rounded-lg shadow-lg p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Management</h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              <Link 
-                to="/admin/doctors"
-                className="bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-200 rounded-lg p-4 text-center hover:from-blue-100 hover:to-blue-200 transition duration-200 transform hover:scale-105"
-              >
-                <div className="text-blue-600 text-3xl mb-2">👨‍⚕️</div>
-                <div className="font-semibold text-blue-900 text-sm">Manage Doctors</div>
-                <div className="text-xs text-blue-700 mt-1">{stats.totalDoctors} doctors</div>
-              </Link>
-              
-              <Link 
-                to="/admin/patients"
-                className="bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-200 rounded-lg p-4 text-center hover:from-green-100 hover:to-green-200 transition duration-200 transform hover:scale-105"
-              >
-                <div className="text-green-600 text-3xl mb-2">👥</div>
-                <div className="font-semibold text-green-900 text-sm">Manage Patients</div>
-                <div className="text-xs text-green-700 mt-1">{stats.totalPatients} patients</div>
-              </Link>
-              
-              <Link 
-                to="/admin/appointments"
-                className="bg-gradient-to-br from-purple-50 to-purple-100 border-2 border-purple-200 rounded-lg p-4 text-center hover:from-purple-100 hover:to-purple-200 transition duration-200 transform hover:scale-105"
-              >
-                <div className="text-purple-600 text-3xl mb-2">📅</div>
-                <div className="font-semibold text-purple-900 text-sm">All Appointments</div>
-                <div className="text-xs text-purple-700 mt-1">{stats.totalAppointments} total</div>
-              </Link>
-            </div>
-          </div>
-
-          {/* Recent Activities */}
-          <div className="bg-white rounded-lg shadow-lg">
-            <div className="p-4 border-b border-gray-200 bg-gray-50">
-              <h2 className="text-lg font-semibold text-gray-900">Recent Activities</h2>
-            </div>
-            <div className="p-4 max-h-96 overflow-y-auto">
-              {stats.recentActivities.length > 0 ? (
-                <div className="space-y-3">
-                  {stats.recentActivities.map(activity => (
-                    <div key={activity.id} className="flex items-start space-x-3 p-2 hover:bg-gray-50 rounded-lg transition">
-                      <div className="text-2xl flex-shrink-0">{getStatusIcon(activity.status)}</div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900">
-                          {activity.action}
-                        </p>
-                        <p className="text-xs text-gray-600 truncate">
-                          {activity.patient} with Dr. {activity.doctor}
-                        </p>
-                        <p className="text-xs text-gray-400 mt-1">
-                          {activity.time}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
+          <div className="p-4">
+            <div className="space-y-3">
+              {dashboardData.systemActivities.map(activity => (
+                <div key={activity.id} className="flex items-start space-x-3 p-3 hover:bg-gray-50 rounded-lg transition duration-150">
+                  <div className="w-2 h-2 bg-indigo-600 rounded-full mt-2 flex-shrink-0"></div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-900">{activity.action}</p>
+                    <p className="text-sm text-gray-600">{activity.details}</p>
+                  </div>
+                  <span className="text-xs text-gray-500 whitespace-nowrap">{activity.time}</span>
                 </div>
-              ) : (
-                <p className="text-center text-gray-500 py-8">No recent activities</p>
-              )}
-              <div className="mt-4 text-center pt-4 border-t">
-                <Link to="/admin/appointments" className="text-blue-600 hover:text-blue-700 text-sm font-medium">
-                  View All Activities →
-                </Link>
-              </div>
+              ))}
             </div>
           </div>
         </div>
 
-        {/* System Status np*/}
-        <div className="mt-6 bg-white rounded-lg shadow-lg p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">System Health Status</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="text-center p-4 border-2 border-green-200 rounded-lg bg-gradient-to-br from-green-50 to-green-100">
-              <div className="text-green-600 text-3xl mb-2">🟢</div>
-              <div className="font-semibold text-green-900">System Online</div>
-              <div className="text-sm text-green-700 mt-1">All services operational</div>
-            </div>
-            <div className="text-center p-4 border-2 border-blue-200 rounded-lg bg-gradient-to-br from-blue-50 to-blue-100">
-              <div className="text-blue-600 text-3xl mb-2">💾</div>
-              <div className="font-semibold text-blue-900">Database</div>
-              <div className="text-sm text-blue-700 mt-1">Healthy & Active</div>
-            </div>
-            <div className="text-center p-4 border-2 border-green-200 rounded-lg bg-gradient-to-br from-green-50 to-green-100">
-              <div className="text-green-600 text-3xl mb-2">🔐</div>
-              <div className="font-semibold text-green-900">Security</div>
-              <div className="text-sm text-green-700 mt-1">Protected</div>
-            </div>
-            <div className="text-center p-4 border-2 border-green-200 rounded-lg bg-gradient-to-br from-green-50 to-green-100">
-              <div className="text-green-600 text-3xl mb-2">⚡</div>
-              <div className="font-semibold text-green-900">Performance</div>
-              <div className="text-sm text-green-700 mt-1">Optimal</div>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );

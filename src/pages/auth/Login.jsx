@@ -160,18 +160,6 @@ const Login = () => {
               </a>
             </div>
 
-            {/* Demo Credentials */}
-            <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
-              <p className="text-xs text-center text-gray-600 mb-2">
-                <span className="font-semibold text-gray-800">Demo Credentials</span>
-              </p>
-              <div className="text-xs text-gray-600 space-y-1">
-                <p><span className="font-medium">Patient:</span> patient@demo.com</p>
-                <p><span className="font-medium">Doctor:</span> doctor@demo.com</p>
-                <p><span className="font-medium">Admin:</span> admin@demo.com</p>
-                <p className="mt-2"><span className="font-medium">Password:</span> any (min 6 characters)</p>
-              </div>
-            </div>
           </form>
         </div>
 

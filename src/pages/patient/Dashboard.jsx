@@ -6,9 +6,8 @@ import { useSelector } from 'react-redux';
 
 
 const PatientDashboard = () => {
-    // Hooks to fetch data
     const user = useSelector((state) => state.auth.user);
-    console.log("Logged-in Patient:", user);
+    
     const { 
         data: appointmentData, 
         isLoading: appointmentsLoading,
@@ -21,7 +20,6 @@ const PatientDashboard = () => {
         isError: recordsError
     } = useGetPatientMedicalRecordsQuery();
     
-    // --- Data Processing and Stats Calculation (Memoized for Performance) ---
     const { 
         upcomingAppointmentsCount, 
         totalRecordsCount, 
@@ -35,7 +33,6 @@ const PatientDashboard = () => {
         let upcomingApps = 0;
         let totalPrescriptions = 0;
 
-        // Utility to check if a date is today or in the future
         const isUpcoming = (appointmentDateString) => {
             if (!appointmentDateString) return false;
             const today = new Date();
@@ -45,21 +42,16 @@ const PatientDashboard = () => {
             return appointmentDate.getTime() >= today.getTime();
         };
         
-        // 1. Appointments Data Processing
         allApps.forEach(app => {
             const status = app.status ? app.status.toLowerCase() : '';
-            // Count if status is scheduled/pending AND date is today or future
             if (isUpcoming(app.appointmentDate) && (status === 'scheduled' || status === 'pending')) {
                 upcomingApps++;
             }
         });
 
-        // 2. Medical Records Data Processing
         const totalRecs = allRecords.length;
 
-        // 3. Active Prescriptions (Counting total prescriptions across all records)
         allRecords.forEach(record => {
-            // Logic to handle prescriptions (can be array, object, or string)
             if (Array.isArray(record.prescription) && record.prescription.length > 0) {
                 totalPrescriptions += record.prescription.length; 
             } else if (record.prescription && typeof record.prescription === 'object' && record.prescription.medicine) {
@@ -78,101 +70,125 @@ const PatientDashboard = () => {
 
     }, [appointmentData, medicalRecordData]);
 
-
-    // --- Loading State Handling ---
     if (appointmentsLoading || recordsLoading) {
         return (
-            <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8 text-center">
-                <p className="text-xl text-blue-600">Loading Dashboard Data... ⏳</p>
+            <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+                <div className="flex items-center justify-center min-h-screen">
+                    <div className="text-center">
+                        <div className="inline-block animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mb-4"></div>
+                        <p className="text-xl text-blue-600 font-medium">Loading Dashboard...</p>
+                    </div>
+                </div>
             </div>
         );
     }
 
-    // --- Error State Handling ---
     if (appointmentsError || recordsError) {
         return (
-            <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8 text-center">
-                <p className="text-xl text-red-600">Error loading dashboard data. Please try again.</p>
+            <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+                <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+                    <div className="text-4xl mb-4">⚠️</div>
+                    <p className="text-xl text-red-600 font-semibold mb-2">Error Loading Dashboard</p>
+                    <p className="text-gray-600">Please try refreshing the page or contact support if the issue persists.</p>
+                </div>
             </div>
         );
     }
-    
-    // Hardcoded Patient Name (Replace "Patient" with a state variable if you have a profile hook)
-    const patientName = "John";
-
 
     return (
         <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
             <div className="px-4 py-6 sm:px-0">
                 
-                {/* Welcome Section */}
-                <div className="bg-white rounded-xl shadow-lg p-6 mb-8 border-l-4 border-blue-500">
-                    <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome back, {user?.data?.name}! 👋</h1>
-                    <p className="text-gray-600">Here's your healthcare overview and recent activities.</p>
+                {/* Welcome Section - Enhanced */}
+                <div className="bg-gradient-to-r from-blue-600 to-cyan-500 rounded-xl shadow-xl p-8 mb-8 text-white relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full -mr-32 -mt-32"></div>
+                    <div className="absolute bottom-0 left-0 w-48 h-48 bg-white opacity-5 rounded-full -ml-24 -mb-24"></div>
+                    <div className="relative z-10">
+                        <h1 className="text-4xl font-bold mb-2">Welcome back, {user?.data?.name}! 👋</h1>
+                        <p className="text-blue-50 text-lg">Here's your healthcare overview and recent activities.</p>
+                    </div>
                 </div>
 
-                {/* Stats Grid - Dynamic Data */}
+                {/* Stats Grid - Enhanced with Gradients */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                     
                     {/* Upcoming Appointments */}
-                    <div className="bg-white rounded-xl shadow-lg p-6 text-center transition duration-300 hover:shadow-xl">
-                        <div className="text-2xl mb-2 text-blue-600">📅</div>
-                        <div className="text-3xl font-bold text-blue-700 mb-1">{upcomingAppointmentsCount}</div>
-                        <div className="text-gray-600 font-medium">Upcoming Appointments</div>
+                    <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl shadow-lg p-6 text-center transition duration-300 hover:shadow-2xl hover:scale-105 border border-blue-200">
+                        <div className="bg-blue-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                            <span className="text-3xl">📅</span>
+                        </div>
+                        <div className="text-4xl font-bold text-blue-800 mb-2">{upcomingAppointmentsCount}</div>
+                        <div className="text-gray-700 font-semibold text-lg">Upcoming Appointments</div>
+                        <Link to="/patient/appointments" className="text-blue-600 text-sm mt-3 inline-block hover:underline font-medium">
+                            View All →
+                        </Link>
                     </div>
 
                     {/* Medical Records */}
-                    <div className="bg-white rounded-xl shadow-lg p-6 text-center transition duration-300 hover:shadow-xl">
-                        <div className="text-2xl mb-2 text-green-600">📋</div>
-                        <div className="text-3xl font-bold text-green-700 mb-1">{totalRecordsCount}</div>
-                        <div className="text-gray-600 font-medium">Medical Records</div>
+                    <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl shadow-lg p-6 text-center transition duration-300 hover:shadow-2xl hover:scale-105 border border-green-200">
+                        <div className="bg-green-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                            <span className="text-3xl">📋</span>
+                        </div>
+                        <div className="text-4xl font-bold text-green-800 mb-2">{totalRecordsCount}</div>
+                        <div className="text-gray-700 font-semibold text-lg">Medical Records</div>
+                        <Link to="/patient/medical-records" className="text-green-600 text-sm mt-3 inline-block hover:underline font-medium">
+                            View All →
+                        </Link>
                     </div>
 
                     {/* Active Prescriptions */}
-                    <div className="bg-white rounded-xl shadow-lg p-6 text-center transition duration-300 hover:shadow-xl">
-                        <div className="text-2xl mb-2 text-purple-600">💊</div>
-                        <div className="text-3xl font-bold text-purple-700 mb-1">{activePrescriptionsCount}</div>
-                        <div className="text-gray-600 font-medium">Total Prescriptions on Record</div>
+                    <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl shadow-lg p-6 text-center transition duration-300 hover:shadow-2xl hover:scale-105 border border-purple-200">
+                        <div className="bg-purple-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                            <span className="text-3xl">💊</span>
+                        </div>
+                        <div className="text-4xl font-bold text-purple-800 mb-2">{activePrescriptionsCount}</div>
+                        <div className="text-gray-700 font-semibold text-lg">Total Prescriptions</div>
+                        <Link to="/patient/medical-records" className="text-purple-600 text-sm mt-3 inline-block hover:underline font-medium">
+                            View Details →
+                        </Link>
                     </div>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {/* Quick Actions */}
+                    {/* Quick Actions - Enhanced */}
                     <div className="lg:col-span-1">
-                        <div className="bg-white rounded-xl shadow-lg p-6 h-full">
-                            <h2 className="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
+                        <div className="bg-white rounded-xl shadow-xl p-6 h-full border border-gray-100">
+                            <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
+                                <span className="bg-gradient-to-r from-blue-600 to-cyan-500 text-white w-8 h-8 rounded-lg flex items-center justify-center mr-3 text-lg">⚡</span>
+                                Quick Actions
+                            </h2>
                             <div className="grid grid-cols-2 gap-4">
                                 
                                 <Link
                                     to="/patient/book-appointment"
-                                    className="flex flex-col items-center justify-center h-28 bg-blue-50 border border-blue-200 rounded-lg p-2 text-center hover:bg-blue-100 transition duration-200"
+                                    className="flex flex-col items-center justify-center h-32 bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-200 rounded-xl p-3 text-center hover:from-blue-100 hover:to-blue-200 hover:shadow-lg transition duration-300 transform hover:scale-105"
                                 >
-                                    <div className="text-blue-600 text-2xl mb-1">✍️</div>
-                                    <div className="font-medium text-blue-900 text-sm">Book Appointment</div>
+                                    <div className="text-blue-600 text-3xl mb-2">✍️</div>
+                                    <div className="font-semibold text-blue-900 text-sm">Book Appointment</div>
                                 </Link>
 
                                 <Link
                                     to="/patient/appointments"
-                                    className="flex flex-col items-center justify-center h-28 bg-green-50 border border-green-200 rounded-lg p-2 text-center hover:bg-green-100 transition duration-200"
+                                    className="flex flex-col items-center justify-center h-32 bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-200 rounded-xl p-3 text-center hover:from-green-100 hover:to-green-200 hover:shadow-lg transition duration-300 transform hover:scale-105"
                                 >
-                                    <div className="text-green-600 text-2xl mb-1">🗓️</div>
-                                    <div className="font-medium text-green-900 text-sm">View Appointments</div>
+                                    <div className="text-green-600 text-3xl mb-2">🗓️</div>
+                                    <div className="font-semibold text-green-900 text-sm">View Appointments</div>
                                 </Link>
 
                                 <Link
                                     to="/patient/medical-records"
-                                    className="flex flex-col items-center justify-center h-28 bg-purple-50 border border-purple-200 rounded-lg p-2 text-center hover:bg-purple-100 transition duration-200"
+                                    className="flex flex-col items-center justify-center h-32 bg-gradient-to-br from-purple-50 to-purple-100 border-2 border-purple-200 rounded-xl p-3 text-center hover:from-purple-100 hover:to-purple-200 hover:shadow-lg transition duration-300 transform hover:scale-105"
                                 >
-                                    <div className="text-purple-600 text-2xl mb-1">📚</div>
-                                    <div className="font-medium text-purple-900 text-sm">Medical Records</div>
+                                    <div className="text-purple-600 text-3xl mb-2">📚</div>
+                                    <div className="font-semibold text-purple-900 text-sm">Medical Records</div>
                                 </Link>
                                 
                                 <Link 
                                     to={"/patient/profile"}
-                                    className="flex flex-col items-center justify-center h-28 bg-gray-50 border border-gray-200 rounded-lg p-2 text-center hover:bg-gray-100 transition duration-200"
+                                    className="flex flex-col items-center justify-center h-32 bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-200 rounded-xl p-3 text-center hover:from-gray-100 hover:to-gray-200 hover:shadow-lg transition duration-300 transform hover:scale-105"
                                 >
-                                    <div className="text-gray-600 text-2xl mb-1">👤</div>
-                                    <div className="font-medium text-gray-900 text-sm">Profile</div>
+                                    <div className="text-gray-600 text-3xl mb-2">👤</div>
+                                    <div className="font-semibold text-gray-900 text-sm">My Profile</div>
                                 </Link>
                             </div>
                         </div>
@@ -180,10 +196,7 @@ const PatientDashboard = () => {
 
                     {/* Next Appointment and Recent Records */}
                     <div className="lg:col-span-2 space-y-6">
-                        {/* Next Appointment */}
                         <NextAppointment upcomingAppointmentsCount={upcomingAppointmentsCount} allAppointments={allAppointments} />
-
-                        {/* Recent Medical Records */}
                         <RecentMedicalRecords medicalRecords={medicalRecordData?.data?.medicalRecords || []} />
                     </div>
                 </div>
@@ -196,14 +209,10 @@ const PatientDashboard = () => {
 export default PatientDashboard;
 
 
-// --- Helper Components ---
-
-// 1. Next Appointment Component
+// Next Appointment Component - Enhanced
 const NextAppointment = ({ upcomingAppointmentsCount, allAppointments }) => {
     
-    // Find the next closest upcoming appointment
     const nextAppointment = useMemo(() => {
-        // Utility to check if a date is today or in the future
         const isUpcoming = (appointmentDateString) => {
             if (!appointmentDateString) return false;
             const today = new Date();
@@ -213,13 +222,10 @@ const NextAppointment = ({ upcomingAppointmentsCount, allAppointments }) => {
             return appointmentDate.getTime() >= today.getTime();
         };
 
-        // Filter and sort appointments
         const upcoming = (allAppointments || []).filter(app => {
             const status = app.status ? app.status.toLowerCase() : '';
-            // Upcoming = Scheduled/Pending AND date is today or future
             return (status === 'scheduled' || status === 'pending') && isUpcoming(app.appointmentDate);
         }).sort((a, b) => {
-            // Sort by Date, then TimeSlot
             const dateA = new Date(a.appointmentDate + ' ' + a.appointmentTime);
             const dateB = new Date(b.appointmentDate + ' ' + b.appointmentTime);
             return dateA - dateB;
@@ -239,35 +245,57 @@ const NextAppointment = ({ upcomingAppointmentsCount, allAppointments }) => {
     };
 
     return (
-        <div className="bg-white rounded-xl shadow-lg">
-            <div className="p-4 border-b border-gray-200">
-                <h2 className="text-xl font-semibold text-gray-900">Your Next Appointment ({upcomingAppointmentsCount})</h2>
+        <div className="bg-white rounded-xl shadow-xl border border-gray-100">
+            <div className="bg-gradient-to-r from-blue-600 to-cyan-500 p-5 rounded-t-xl">
+                <h2 className="text-xl font-bold text-white flex items-center">
+                    <span className="mr-2">📅</span>
+                    Your Next Appointment ({upcomingAppointmentsCount})
+                </h2>
             </div>
             <div className="p-6">
                 {nextAppointment ? (
-                    <div className="flex flex-col sm:flex-row justify-between items-center bg-blue-50 p-4 rounded-lg border border-blue-200">
-                        <div className='mb-3 sm:mb-0 sm:pr-4'>
-                            <p className="text-lg font-bold text-blue-800 mb-1">
-                                {formatDate(nextAppointment.appointmentDate)} at {nextAppointment.appointmentTime || 'N/A'}
-                            </p>
-                            <p className="text-sm text-gray-700 font-medium">
-                                **{nextAppointment.reason || 'General Consultation'}**
-                            </p>
-                            <p className="text-sm text-gray-600 mt-1">
-                                With Dr. {nextAppointment.doctorId?.userId?.name || 'N/A'} ({nextAppointment.doctorId?.userId?.specialization || 'N/A'})
-                            </p>
+                    <div className="bg-gradient-to-br from-blue-50 to-cyan-50 p-6 rounded-xl border-2 border-blue-200 shadow-lg">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
+                            <div className='mb-4 sm:mb-0 sm:pr-6 flex-1'>
+                                <div className="flex items-center mb-3">
+                                    <div className="bg-blue-600 w-12 h-12 rounded-full flex items-center justify-center mr-3">
+                                        <span className="text-white text-xl">👨‍⚕️</span>
+                                    </div>
+                                    <div>
+                                        <p className="text-lg font-bold text-blue-900">
+                                            Dr. {nextAppointment.doctorId?.userId?.name || 'N/A'}
+                                        </p>
+                                        <p className="text-sm text-blue-700">
+                                            {nextAppointment.doctorId?.userId?.specialization || 'N/A'}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="space-y-2 ml-15">
+                                    <p className="text-md font-semibold text-gray-800 flex items-center">
+                                        <span className="mr-2">📆</span>
+                                        {formatDate(nextAppointment.appointmentDate)} at {nextAppointment.appointmentTime || 'N/A'}
+                                    </p>
+                                    <p className="text-sm text-gray-700 flex items-center">
+                                        <span className="mr-2">📋</span>
+                                        <span className="font-medium">{nextAppointment.reason || 'General Consultation'}</span>
+                                    </p>
+                                </div>
+                            </div>
+                            <Link to="/patient/appointments">
+                                <button className="w-full sm:w-auto bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition shadow-lg hover:shadow-xl transform hover:scale-105">
+                                    View Details →
+                                </button>
+                            </Link>
                         </div>
-                        <Link to="/patient/appointments">
-                            <button className="w-full sm:w-auto bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition">
-                                View Details
-                            </button>
-                        </Link>
                     </div>
                 ) : (
-                    <div className="text-center py-4">
-                        <p className="text-gray-500">You currently have no upcoming appointments.</p>
-                        <Link to="/patient/book-appointment" className="text-blue-600 text-sm font-medium mt-2 block hover:underline">
-                            Book a new appointment →
+                    <div className="text-center py-8 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
+                        <div className="text-5xl mb-4">📅</div>
+                        <p className="text-gray-600 text-lg font-medium mb-4">No upcoming appointments scheduled</p>
+                        <Link to="/patient/book-appointment">
+                            <button className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition shadow-lg">
+                                Book Your First Appointment →
+                            </button>
                         </Link>
                     </div>
                 )}
@@ -277,9 +305,8 @@ const NextAppointment = ({ upcomingAppointmentsCount, allAppointments }) => {
 };
 
 
-// 2. Recent Medical Records Component
+// Recent Medical Records Component - Enhanced
 const RecentMedicalRecords = ({ medicalRecords }) => {
-    // Get the top 3 most recent records
     const recentRecords = medicalRecords.slice(0, 3); 
 
     const formatDate = (dateString) => {
@@ -292,33 +319,46 @@ const RecentMedicalRecords = ({ medicalRecords }) => {
     };
 
     return (
-        <div className="bg-white rounded-xl shadow-lg">
-            <div className="p-4 border-b border-gray-200">
-                <h2 className="text-xl font-semibold text-gray-900">Recent Medical Records</h2>
+        <div className="bg-white rounded-xl shadow-xl border border-gray-100">
+            <div className="bg-gradient-to-r from-purple-600 to-pink-500 p-5 rounded-t-xl">
+                <h2 className="text-xl font-bold text-white flex items-center">
+                    <span className="mr-2">📚</span>
+                    Recent Medical Records
+                </h2>
             </div>
-            <div className="p-4 divide-y divide-gray-100">
+            <div className="p-4 divide-y divide-gray-200">
                 {recentRecords.length > 0 ? (
                     recentRecords.map(record => (
-                        <div key={record._id} className="py-3 flex justify-between items-start hover:bg-gray-50 transition duration-150 px-2 rounded-lg">
-                            <div className="flex-1">
-                                <p className="font-medium text-gray-900 flex items-center">
-                                    <span className="text-lg mr-2 text-purple-600">📑</span>
-                                    {record.diagnosis || 'Diagnosis Pending'}
-                                </p>
-                                <p className="text-sm text-gray-600 ml-5">
-                                    Dr. {record.doctorId?.userId?.name || 'N/A'} ({record.doctorId?.userId?.specialization || 'N/A'})
-                                </p>
+                        <div key={record._id} className="py-4 flex justify-between items-start hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 transition duration-200 px-4 rounded-lg">
+                            <div className="flex-1 flex items-start">
+                                <div className="bg-purple-100 w-10 h-10 rounded-full flex items-center justify-center mr-4 flex-shrink-0">
+                                    <span className="text-purple-600 text-lg">📑</span>
+                                </div>
+                                <div className="flex-1">
+                                    <p className="font-bold text-gray-900 text-lg mb-1">
+                                        {record.diagnosis || 'Diagnosis Pending'}
+                                    </p>
+                                    <p className="text-sm text-gray-600 flex items-center">
+                                        <span className="mr-1">👨‍⚕️</span>
+                                        Dr. {record.doctorId?.userId?.name || 'N/A'} 
+                                        <span className="mx-2">•</span>
+                                        {record.doctorId?.userId?.specialization || 'N/A'}
+                                    </p>
+                                </div>
                             </div>
-                            <span className="text-xs text-gray-500 font-medium flex-shrink-0 mt-1">
+                            <span className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-xs font-semibold flex-shrink-0 mt-1">
                                 {formatDate(record.createdAt)}
                             </span>
                         </div>
                     ))
                 ) : (
-                    <div className="text-center py-4">
-                        <p className="text-gray-500">No medical records found yet.</p>
-                        <Link to="/patient/medical-records" className="text-purple-600 text-sm font-medium mt-2 block hover:underline">
-                            View Records Page →
+                    <div className="text-center py-8 bg-gray-50 rounded-xl">
+                        <div className="text-5xl mb-4">📋</div>
+                        <p className="text-gray-600 text-lg font-medium mb-4">No medical records found yet</p>
+                        <Link to="/patient/medical-records">
+                            <button className="bg-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-purple-700 transition shadow-lg">
+                                View Records Page →
+                            </button>
                         </Link>
                     </div>
                 )}

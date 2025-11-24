@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
-
 import { useGetPatientMedicalRecordsQuery } from '../../store/services/MadcialRecod';
 
 const PatientMedicalRecords = () => {
-    // API Hook
     const { 
         data: patientRecordData, 
         isLoading, 
@@ -12,21 +10,16 @@ const PatientMedicalRecords = () => {
     } = useGetPatientMedicalRecordsQuery();
    
     const medicalRecords = patientRecordData?.data?.medicalRecords || [];
-
     const [selectedRecord, setSelectedRecord] = useState(null);
 
-    // Initial state set karne ke liye useEffect use kar sakte hain
-    // Taki jab data aaye, toh pehla record automatically select ho jaaye.
     React.useEffect(() => {
         if (medicalRecords.length > 0 && !selectedRecord) {
             setSelectedRecord(medicalRecords[0]);
         }
     }, [medicalRecords, selectedRecord]);
 
-
     const formatDate = (dateString) => {
         if (!dateString) return 'N/A';
-        // ISO date string ko format karna
         return new Date(dateString).toLocaleDateString('en-US', {
             year: 'numeric',
             month: 'long',
@@ -34,100 +27,129 @@ const PatientMedicalRecords = () => {
         });
     };
 
-    // --- Loading and Error States ---
     if (isLoading) {
         return (
-            <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8 text-center">
-                <p className="text-xl text-blue-600">Loading Medical Records... ⏳</p>
+            <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+                <div className="flex items-center justify-center min-h-screen">
+                    <div className="text-center">
+                        <div className="inline-block animate-spin rounded-full h-16 w-16 border-b-2 border-purple-600 mb-4"></div>
+                        <p className="text-xl text-purple-600 font-medium">Loading Medical Records...</p>
+                    </div>
+                </div>
             </div>
         );
     }
 
     if (isError) {
-        // Optional: Show specific error message if available
         const errorMessage = error?.data?.message || "Failed to fetch medical records.";
         return (
-            <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8 text-center">
-                <p className="text-xl text-red-600">Error: {errorMessage}</p>
+            <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+                <div className="bg-red-50 border-2 border-red-200 rounded-xl p-8 text-center shadow-lg">
+                    <div className="text-5xl mb-4">⚠️</div>
+                    <h3 className="text-2xl font-bold text-red-600 mb-2">Error Loading Records</h3>
+                    <p className="text-gray-700">{errorMessage}</p>
+                </div>
             </div>
         );
     }
 
-    // --- Data Processing for Stats ---
-
     const totalRecords = medicalRecords.length;
-    // Check if testsRecommended array exists and has length > 0
     const recordsWithTests = medicalRecords.filter(record => record.testsRecommended && record.testsRecommended.length > 0).length;
-    // Count unique doctors using doctorId._id field
     const uniqueDoctorIds = new Set(medicalRecords.map(record => record.doctorId?._id).filter(id => id));
     const doctorsVisited = uniqueDoctorIds.size;
-    
-    // --- Main Render ---
 
     return (
         <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
             <div className="px-4 py-6 sm:px-0">
+                
                 {/* Header */}
-                <div className="mb-6">
-                    <h1 className="text-3xl font-extrabold text-gray-900">Your Medical Records 📋</h1>
-                    <p className="text-gray-600">View your complete medical history and treatment details.</p>
+                <div className="bg-gradient-to-r from-purple-600 to-pink-500 rounded-xl shadow-xl p-8 mb-8 text-white">
+                    <h1 className="text-4xl font-bold mb-2">Your Medical Records 📋</h1>
+                    <p className="text-purple-50 text-lg">View your complete medical history and treatment details</p>
                 </div>
 
                 {/* Stats */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                    <div className="bg-white rounded-xl shadow-lg p-5 text-center border-t-4 border-blue-500">
-                        <div className="text-3xl font-bold text-blue-600 mb-1">{totalRecords}</div>
-                        <div className="text-gray-600 font-medium">Total Records</div>
+                    <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl shadow-lg p-6 text-center border border-blue-200 transition duration-300 hover:shadow-2xl hover:scale-105">
+                        <div className="bg-blue-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                            <span className="text-3xl">📋</span>
+                        </div>
+                        <div className="text-4xl font-bold text-blue-800 mb-1">{totalRecords}</div>
+                        <div className="text-gray-700 font-semibold">Total Records</div>
                     </div>
-                    <div className="bg-white rounded-xl shadow-lg p-5 text-center border-t-4 border-green-500">
-                        <div className="text-3xl font-bold text-green-600 mb-1">{recordsWithTests}</div>
-                        <div className="text-gray-600 font-medium">Records with Tests</div>
+                    
+                    <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl shadow-lg p-6 text-center border border-green-200 transition duration-300 hover:shadow-2xl hover:scale-105">
+                        <div className="bg-green-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                            <span className="text-3xl">🔬</span>
+                        </div>
+                        <div className="text-4xl font-bold text-green-800 mb-1">{recordsWithTests}</div>
+                        <div className="text-gray-700 font-semibold">Records with Tests</div>
                     </div>
-                    <div className="bg-white rounded-xl shadow-lg p-5 text-center border-t-4 border-purple-500">
-                        <div className="text-3xl font-bold text-purple-600 mb-1">{doctorsVisited}</div>
-                        <div className="text-gray-600 font-medium">Doctors Visited</div>
+                    
+                    <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl shadow-lg p-6 text-center border border-purple-200 transition duration-300 hover:shadow-2xl hover:scale-105">
+                        <div className="bg-purple-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                            <span className="text-3xl">👨‍⚕️</span>
+                        </div>
+                        <div className="text-4xl font-bold text-purple-800 mb-1">{doctorsVisited}</div>
+                        <div className="text-gray-700 font-semibold">Doctors Visited</div>
                     </div>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    
                     {/* Records List */}
                     <div className="lg:col-span-1">
-                        <div className="bg-white rounded-xl shadow-lg">
-                            <div className="p-4 border-b border-gray-200 bg-gray-50 rounded-t-xl">
-                                <h2 className="text-xl font-semibold text-gray-900">Medical History (List)</h2>
+                        <div className="bg-white rounded-xl shadow-xl border border-gray-100 sticky top-6">
+                            <div className="bg-gradient-to-r from-purple-600 to-pink-500 p-5 rounded-t-xl">
+                                <h2 className="text-xl font-bold text-white flex items-center">
+                                    <span className="mr-2">📚</span>
+                                    Medical History ({totalRecords})
+                                </h2>
                             </div>
                             
                             <div className="divide-y divide-gray-200 max-h-[70vh] overflow-y-auto">
                                 {medicalRecords.length > 0 ? (
                                     medicalRecords.map(record => (
                                         <div 
-                                            key={record._id} // Using API's _id
-                                            className={`p-4 cursor-pointer transition duration-200 ${
-                                                selectedRecord?._id === record._id ? 'bg-blue-100 border-l-4 border-blue-600' : 'hover:bg-gray-50'
+                                            key={record._id}
+                                            className={`p-5 cursor-pointer transition duration-300 ${
+                                                selectedRecord?._id === record._id 
+                                                    ? 'bg-gradient-to-r from-purple-100 to-pink-100 border-l-4 border-purple-600 shadow-md' 
+                                                    : 'hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50'
                                             }`}
                                             onClick={() => setSelectedRecord(record)}
                                         >
-                                            <div className="flex items-start justify-between mb-2">
-                                                <div>
-                                                    {/* Extracting Doctor Name and Specialization */}
-                                                    <h3 className="font-semibold text-gray-900">
-                                                        {record.doctorId?.userId?.name || 'Unknown Doctor'}
+                                            <div className="flex items-start mb-3">
+                                                <div className="bg-gradient-to-br from-purple-600 to-pink-500 w-12 h-12 rounded-full flex items-center justify-center mr-3 flex-shrink-0 shadow-lg">
+                                                    <span className="text-white font-bold text-lg">
+                                                        {record.doctorId?.userId?.name?.charAt(0) || 'D'}
+                                                    </span>
+                                                </div>
+                                                <div className="flex-1">
+                                                    <h3 className="font-bold text-gray-900 text-lg">
+                                                        Dr. {record.doctorId?.userId?.name || 'Unknown Doctor'}
                                                     </h3>
-                                                    <p className="text-sm text-gray-600">
+                                                    <p className="text-sm text-gray-600 font-medium">
                                                         {record.doctorId?.userId?.specialization || 'N/A'}
                                                     </p>
                                                 </div>
-                                                <span className="text-xs text-gray-500 font-medium">
-                                                    {formatDate(record.createdAt)} {/* Use createdAt as list date */}
+                                            </div>
+                                            <div className="ml-15">
+                                                <p className="text-sm text-gray-700 mb-2">
+                                                    <span className="font-semibold text-red-600">Diagnosis:</span>{' '}
+                                                    <span className="font-medium">{record.diagnosis || 'Pending'}</span>
+                                                </p>
+                                                <span className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-xs font-semibold">
+                                                    {formatDate(record.createdAt)}
                                                 </span>
                                             </div>
-                                            <p className="text-sm text-gray-700">
-                                                <span className="font-medium text-red-500">Diagnosis:</span> {record.diagnosis || 'Pending'}
-                                            </p>
                                         </div>
                                     ))
                                 ) : (
-                                    <p className="p-4 text-center text-gray-500">No medical records found.</p>
+                                    <div className="p-8 text-center">
+                                        <div className="text-5xl mb-4">📋</div>
+                                        <p className="text-gray-500 font-medium">No medical records found</p>
+                                    </div>
                                 )}
                             </div>
                         </div>
@@ -135,9 +157,10 @@ const PatientMedicalRecords = () => {
 
                     {/* Record Details */}
                     <div className="lg:col-span-2">
-                        <div className="bg-white rounded-xl shadow-lg sticky top-6">
-                            <div className="p-4 border-b border-gray-200 bg-gray-50 rounded-t-xl">
-                                <h2 className="text-xl font-semibold text-gray-900">
+                        <div className="bg-white rounded-xl shadow-xl border border-gray-100">
+                            <div className="bg-gradient-to-r from-blue-600 to-cyan-500 p-5 rounded-t-xl">
+                                <h2 className="text-xl font-bold text-white flex items-center">
+                                    <span className="mr-2">🔍</span>
                                     {selectedRecord ? 'Detailed Record View' : 'Select a Record'}
                                 </h2>
                             </div>
@@ -147,78 +170,106 @@ const PatientMedicalRecords = () => {
                                     <div className="space-y-6">
                                         
                                         {/* Doctor Information & Date */}
-                                        <div className="border-b pb-4">
-                                            <h3 className="text-lg font-bold text-blue-700">
-                                                Dr. {selectedRecord.doctorId?.userId?.name || 'Unknown Doctor'}
-                                            </h3>
-                                            <p className="text-sm text-gray-600">{selectedRecord.doctorId?.userId?.specialization || 'N/A'}</p>
-                                            <p className="text-sm text-gray-500 mt-1">
-                                                Record Date: {formatDate(selectedRecord.createdAt)}
+                                        <div className="bg-gradient-to-br from-blue-50 to-cyan-50 border-2 border-blue-200 rounded-xl p-5 shadow-md">
+                                            <div className="flex items-center mb-3">
+                                                <div className="bg-blue-600 w-14 h-14 rounded-full flex items-center justify-center mr-4 shadow-lg">
+                                                    <span className="text-white text-2xl">👨‍⚕️</span>
+                                                </div>
+                                                <div>
+                                                    <h3 className="text-2xl font-bold text-blue-900">
+                                                        Dr. {selectedRecord.doctorId?.userId?.name || 'Unknown Doctor'}
+                                                    </h3>
+                                                    <p className="text-blue-700 font-semibold">
+                                                        {selectedRecord.doctorId?.userId?.specialization || 'N/A'}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <p className="text-gray-700 font-medium bg-white px-4 py-2 rounded-lg">
+                                                📅 Record Date: <span className="font-bold">{formatDate(selectedRecord.createdAt)}</span>
                                             </p>
                                         </div>
 
                                         {/* Diagnosis */}
-                                        <div>
-                                            <h3 className="font-bold text-gray-900 mb-2 flex items-center">
-                                                <span className="text-xl mr-2">🤒</span> Diagnosis
+                                        <div className="bg-gradient-to-br from-red-50 to-pink-50 border-2 border-red-200 rounded-xl p-5 shadow-md">
+                                            <h3 className="font-bold text-gray-900 text-xl mb-3 flex items-center">
+                                                <span className="bg-red-600 text-white w-10 h-10 rounded-lg flex items-center justify-center mr-3">🤒</span>
+                                                Diagnosis
                                             </h3>
-                                            <p className="text-md text-gray-700 bg-red-50 p-3 rounded-lg border border-red-200 font-medium">
+                                            <p className="text-lg text-gray-900 bg-white p-4 rounded-lg font-semibold border-l-4 border-red-600">
                                                 {selectedRecord.diagnosis || 'No official diagnosis provided yet.'}
                                             </p>
                                         </div>
 
                                         {/* Symptoms */}
-                                        <div>
-                                            <h3 className="font-bold text-gray-900 mb-2 flex items-center">
-                                                <span className="text-xl mr-2">🤕</span> Symptoms
+                                        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-5 shadow-md">
+                                            <h3 className="font-bold text-gray-900 text-xl mb-3 flex items-center">
+                                                <span className="bg-blue-600 text-white w-10 h-10 rounded-lg flex items-center justify-center mr-3">🤕</span>
+                                                Symptoms
                                             </h3>
-                                            <div className="flex flex-wrap gap-2">
+                                            <div className="flex flex-wrap gap-3">
                                                 {selectedRecord.symptoms && selectedRecord.symptoms.length > 0 ? (
                                                     selectedRecord.symptoms.map((symptom, index) => (
-                                                        <span key={index} className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-medium">
+                                                        <span key={index} className="bg-white border-2 border-blue-300 text-blue-800 px-4 py-2 rounded-lg font-semibold shadow-md">
                                                             {symptom}
                                                         </span>
                                                     ))
                                                 ) : (
-                                                    <p className="text-sm text-gray-500">No symptoms recorded.</p>
+                                                    <p className="text-gray-500 bg-white px-4 py-2 rounded-lg">No symptoms recorded.</p>
                                                 )}
                                             </div>
                                         </div>
 
                                         {/* Prescription */}
-                                        <div>
-                                            <h3 className="font-bold text-gray-900 mb-3 flex items-center">
-                                                <span className="text-xl mr-2">💊</span> Prescription
+                                        <div className="bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-5 shadow-md">
+                                            <h3 className="font-bold text-gray-900 text-xl mb-4 flex items-center">
+                                                <span className="bg-green-600 text-white w-10 h-10 rounded-lg flex items-center justify-center mr-3">💊</span>
+                                                Prescription
                                             </h3>
                                             <div className="space-y-3">
                                                 {selectedRecord.prescription && selectedRecord.prescription.length > 0 ? (
                                                     selectedRecord.prescription.map((med, index) => (
-                                                        <div key={index} className="bg-green-50 p-3 rounded-lg border border-green-200">
-                                                            <div className="font-bold text-green-800">{med.medicine || 'N/A'}</div>
-                                                            <div className="text-sm text-green-700">
-                                                                <span className="font-medium">Dosage:</span> {med.dosage || 'N/A'} 
-                                                                <span className="mx-2">•</span> 
-                                                                <span className="font-medium">Frequency:</span> {med.frequency || 'N/A'} 
-                                                                <span className="mx-2">•</span>
-                                                                <span className="font-medium">Duration:</span> {med.duration || 'N/A'}
+                                                        <div key={index} className="bg-white p-4 rounded-xl border-2 border-green-300 shadow-md hover:shadow-lg transition duration-300">
+                                                            <div className="font-bold text-green-900 text-lg mb-2 flex items-center">
+                                                                <span className="bg-green-600 text-white w-8 h-8 rounded-lg flex items-center justify-center mr-2 text-sm">
+                                                                    {index + 1}
+                                                                </span>
+                                                                {med.medicine || 'N/A'}
+                                                            </div>
+                                                            <div className="grid grid-cols-3 gap-2 text-sm text-gray-700">
+                                                                <div className="bg-green-50 p-2 rounded-lg">
+                                                                    <span className="font-semibold">Dosage:</span>
+                                                                    <br />
+                                                                    <span className="font-bold text-green-800">{med.dosage || 'N/A'}</span>
+                                                                </div>
+                                                                <div className="bg-green-50 p-2 rounded-lg">
+                                                                    <span className="font-semibold">Frequency:</span>
+                                                                    <br />
+                                                                    <span className="font-bold text-green-800">{med.frequency || 'N/A'}</span>
+                                                                </div>
+                                                                <div className="bg-green-50 p-2 rounded-lg">
+                                                                    <span className="font-semibold">Duration:</span>
+                                                                    <br />
+                                                                    <span className="font-bold text-green-800">{med.duration || 'N/A'}</span>
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     ))
                                                 ) : (
-                                                    <p className="text-sm text-gray-500">No medication prescribed.</p>
+                                                    <p className="text-gray-500 bg-white px-4 py-3 rounded-lg">No medication prescribed.</p>
                                                 )}
                                             </div>
                                         </div>
 
                                         {/* Tests Recommended */}
                                         {selectedRecord.testsRecommended && selectedRecord.testsRecommended.length > 0 && (
-                                            <div>
-                                                <h3 className="font-bold text-gray-900 mb-2 flex items-center">
-                                                    <span className="text-xl mr-2">🔬</span> Tests Recommended
+                                            <div className="bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-200 rounded-xl p-5 shadow-md">
+                                                <h3 className="font-bold text-gray-900 text-xl mb-3 flex items-center">
+                                                    <span className="bg-purple-600 text-white w-10 h-10 rounded-lg flex items-center justify-center mr-3">🔬</span>
+                                                    Tests Recommended
                                                 </h3>
-                                                <div className="flex flex-wrap gap-2">
+                                                <div className="flex flex-wrap gap-3">
                                                     {selectedRecord.testsRecommended.map((test, index) => (
-                                                        <span key={index} className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm font-medium">
+                                                        <span key={index} className="bg-white border-2 border-purple-300 text-purple-800 px-4 py-2 rounded-lg font-semibold shadow-md">
                                                             {test}
                                                         </span>
                                                     ))}
@@ -228,20 +279,21 @@ const PatientMedicalRecords = () => {
 
                                         {/* Doctor's Notes */}
                                         {selectedRecord.notes && (
-                                            <div>
-                                                <h3 className="font-bold text-gray-900 mb-2 flex items-center">
-                                                    <span className="text-xl mr-2">📝</span> Doctor's Notes
+                                            <div className="bg-gradient-to-br from-yellow-50 to-orange-50 border-2 border-yellow-200 rounded-xl p-5 shadow-md">
+                                                <h3 className="font-bold text-gray-900 text-xl mb-3 flex items-center">
+                                                    <span className="bg-yellow-600 text-white w-10 h-10 rounded-lg flex items-center justify-center mr-3">📝</span>
+                                                    Doctor's Notes
                                                 </h3>
-                                                <p className="text-sm text-gray-700 bg-yellow-50 p-3 rounded-lg border border-yellow-200">
+                                                <p className="text-gray-900 bg-white p-4 rounded-lg font-medium border-l-4 border-yellow-600">
                                                     {selectedRecord.notes}
                                                 </p>
                                             </div>
                                         )}
                                     </div>
                                 ) : (
-                                    <div className="text-center py-10">
-                                        <div className="text-gray-300 text-6xl mb-4">🩺</div>
-                                        <p className="text-gray-500">Select a medical record from the list to view its details.</p>
+                                    <div className="text-center py-16">
+                                        <div className="text-gray-300 text-8xl mb-6">🩺</div>
+                                        <p className="text-gray-500 text-xl font-medium">Select a medical record from the list to view its details</p>
                                     </div>
                                 )}
                             </div>
