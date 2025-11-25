@@ -33,12 +33,23 @@ const DoctorAppointments = () => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'scheduled': return 'bg-blue-100 text-blue-800';
-      case 'confirmed': return 'bg-purple-100 text-purple-800';
-      case 'completed': return 'bg-green-100 text-green-800';
-      case 'cancelled': return 'bg-red-100 text-red-800';
-      case 'no-show': return 'bg-orange-100 text-orange-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'scheduled': return 'bg-blue-50 text-blue-700 border border-blue-200';
+      case 'confirmed': return 'bg-purple-50 text-purple-700 border border-purple-200';
+      case 'completed': return 'bg-green-50 text-green-700 border border-green-200';
+      case 'cancelled': return 'bg-red-50 text-red-700 border border-red-200';
+      case 'no-show': return 'bg-orange-50 text-orange-700 border border-orange-200';
+      default: return 'bg-gray-50 text-gray-700 border border-gray-200';
+    }
+  };
+
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'scheduled': return '📅';
+      case 'confirmed': return '✅';
+      case 'completed': return '🩺';
+      case 'cancelled': return '❌';
+      case 'no-show': return '👻';
+      default: return '📋';
     }
   };
 
@@ -62,7 +73,10 @@ const DoctorAppointments = () => {
       }).unwrap();
 
       if (result.success) {
-        alert(`Appointment status updated to ${newStatus} successfully!`);
+        // Update local state immediately for better UX
+        setAppointments(prev => prev.map(apt => 
+          apt._id === appointmentId ? { ...apt, status: newStatus } : apt
+        ));
       }
     } catch (error) {
       console.error('Error updating appointment status:', error);
@@ -71,7 +85,6 @@ const DoctorAppointments = () => {
   };
 
   const handleCreateMedicalRecord = async (appointment) => {
-    // Agar appointment completed nahi hai, pehle complete karo
     if (appointment.status !== 'completed') {
       const confirmComplete = window.confirm(
         'Appointment must be completed before creating medical record. Mark as completed?'
@@ -81,10 +94,7 @@ const DoctorAppointments = () => {
 
       try {
         await handleStatusUpdate(appointment._id, 'completed');
-        // Wait for status update to complete, then open modal
-        setTimeout(() => {
-          openMedicalRecordModal(appointment);
-        }, 1000);
+        openMedicalRecordModal(appointment);
       } catch (error) {
         console.error('Error updating appointment status:', error);
         alert('Failed to complete appointment');
@@ -107,7 +117,6 @@ const DoctorAppointments = () => {
   };
 
   const handleMedicalRecordSubmit = async () => {
-    // Validation
     if (!medicalRecordData.diagnosis.trim()) {
       alert('Please enter diagnosis');
       return;
@@ -126,13 +135,10 @@ const DoctorAppointments = () => {
         notes: medicalRecordData.notes
       };
 
-      // Create medical record
       const result = await createMedicalRecord(medicalRecordPayload).unwrap();
 
       if (result.success) {
-        // Update appointment status to completed
         await handleStatusUpdate(selectedAppointment._id, 'completed');
-
         setShowMedicalRecord(false);
         alert('Medical record created successfully!');
       }
@@ -203,15 +209,25 @@ const DoctorAppointments = () => {
   // Loading state
   if (queryLoading) {
     return (
-      <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="animate-pulse">
-              <div className="h-6 bg-gray-200 rounded w-1/4 mb-4"></div>
-              <div className="h-4 bg-gray-200 rounded w-1/2 mb-8"></div>
-              <div className="space-y-3">
-                {[1, 2, 3].map(n => (
-                  <div key={n} className="h-20 bg-gray-200 rounded"></div>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="animate-pulse">
+            <div className="h-8 bg-gray-200 rounded w-64 mb-2"></div>
+            <div className="h-4 bg-gray-200 rounded w-96 mb-8"></div>
+            
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+              {[1,2,3,4,5].map(n => (
+                <div key={n} className="bg-white rounded-2xl shadow-sm p-6">
+                  <div className="h-6 bg-gray-200 rounded w-3/4 mb-2"></div>
+                  <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                </div>
+              ))}
+            </div>
+
+            <div className="bg-white rounded-2xl shadow-sm p-6">
+              <div className="space-y-4">
+                {[1,2,3].map(n => (
+                  <div key={n} className="h-24 bg-gray-200 rounded-xl"></div>
                 ))}
               </div>
             </div>
@@ -224,11 +240,18 @@ const DoctorAppointments = () => {
   // Error state
   if (isError) {
     return (
-      <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
-          <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-            <h3 className="text-red-800 font-semibold mb-2">Error loading appointments</h3>
-            <p className="text-red-600">{error?.data?.message || 'Something went wrong'}</p>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="bg-white rounded-2xl shadow-sm p-8 text-center">
+            <div className="text-6xl mb-4">😔</div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">Unable to Load Appointments</h3>
+            <p className="text-gray-600 mb-4">We're having trouble loading your appointments right now.</p>
+            <button 
+              onClick={() => window.location.reload()}
+              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition duration-200"
+            >
+              Try Again
+            </button>
           </div>
         </div>
       </div>
@@ -236,170 +259,172 @@ const DoctorAppointments = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-      <div className="px-4 py-6 sm:px-0">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
         {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Appointment Management</h1>
-          <p className="text-gray-600">Manage your patient appointments and consultations</p>
+        <div className="mb-8 text-center">
+          <h1 className="text-4xl font-bold text-gray-900 mb-3">Appointment Dashboard</h1>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            Manage your patient consultations and provide quality healthcare services
+          </p>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
-          <div className="bg-white rounded-lg shadow p-4 text-center">
-            <div className="text-2xl font-bold text-blue-600 mb-1">
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+          <div className="bg-white rounded-2xl shadow-sm p-6 text-center hover:shadow-md transition duration-200">
+            <div className="text-3xl font-bold text-blue-600 mb-2">
               {appointments.filter(a => a.status === 'scheduled').length}
             </div>
-            <div className="text-gray-600 text-sm">Scheduled</div>
+            <div className="text-gray-600 font-medium">Scheduled</div>
+            <div className="text-blue-400 text-2xl mt-2">📅</div>
           </div>
-          <div className="bg-white rounded-lg shadow p-4 text-center">
-            <div className="text-2xl font-bold text-purple-600 mb-1">
+          
+          <div className="bg-white rounded-2xl shadow-sm p-6 text-center hover:shadow-md transition duration-200">
+            <div className="text-3xl font-bold text-purple-600 mb-2">
               {appointments.filter(a => a.status === 'confirmed').length}
             </div>
-            <div className="text-gray-600 text-sm">Confirmed</div>
+            <div className="text-gray-600 font-medium">Confirmed</div>
+            <div className="text-purple-400 text-2xl mt-2">✅</div>
           </div>
-          <div className="bg-white rounded-lg shadow p-4 text-center">
-            <div className="text-2xl font-bold text-green-600 mb-1">
+          
+          <div className="bg-white rounded-2xl shadow-sm p-6 text-center hover:shadow-md transition duration-200">
+            <div className="text-3xl font-bold text-green-600 mb-2">
               {appointments.filter(a => a.status === 'completed').length}
             </div>
-            <div className="text-gray-600 text-sm">Completed</div>
+            <div className="text-gray-600 font-medium">Completed</div>
+            <div className="text-green-400 text-2xl mt-2">🩺</div>
           </div>
-          <div className="bg-white rounded-lg shadow p-4 text-center">
-            <div className="text-2xl font-bold text-orange-600 mb-1">
+          
+          <div className="bg-white rounded-2xl shadow-sm p-6 text-center hover:shadow-md transition duration-200">
+            <div className="text-3xl font-bold text-orange-600 mb-2">
               {appointments.filter(a => a.status === 'scheduled' && new Date(a.appointmentDate) >= new Date()).length}
             </div>
-            <div className="text-gray-600 text-sm">Upcoming</div>
+            <div className="text-gray-600 font-medium">Upcoming</div>
+            <div className="text-orange-400 text-2xl mt-2">⏰</div>
           </div>
-          <div className="bg-white rounded-lg shadow p-4 text-center">
-            <div className="text-2xl font-bold text-gray-600 mb-1">
+          
+          <div className="bg-white rounded-2xl shadow-sm p-6 text-center hover:shadow-md transition duration-200">
+            <div className="text-3xl font-bold text-gray-600 mb-2">
               {appointments.length}
             </div>
-            <div className="text-gray-600 text-sm">Total</div>
+            <div className="text-gray-600 font-medium">Total</div>
+            <div className="text-gray-400 text-2xl mt-2">📊</div>
           </div>
         </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-lg shadow p-4 mb-6">
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => setFilter('all')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === 'all'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+        <div className="bg-white rounded-2xl shadow-sm p-6 mb-8">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Filter Appointments</h3>
+          <div className="flex flex-wrap gap-3">
+            {[
+              { key: 'all', label: 'All Appointments', emoji: '📋' },
+              { key: 'scheduled', label: 'Scheduled', emoji: '📅' },
+              { key: 'confirmed', label: 'Confirmed', emoji: '✅' },
+              { key: 'completed', label: 'Completed', emoji: '🩺' },
+              { key: 'cancelled', label: 'Cancelled', emoji: '❌' },
+              { key: 'no-show', label: 'No Show', emoji: '👻' }
+            ].map(({ key, label, emoji }) => (
+              <button
+                key={key}
+                onClick={() => setFilter(key)}
+                className={`flex items-center gap-2 px-4 py-3 rounded-xl font-medium transition duration-200 ${
+                  filter === key
+                    ? 'bg-blue-600 text-white shadow-md'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
-            >
-              All Appointments
-            </button>
-            <button
-              onClick={() => setFilter('scheduled')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === 'scheduled'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-            >
-              Scheduled
-            </button>
-            <button
-              onClick={() => setFilter('confirmed')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === 'confirmed'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-            >
-              Confirmed
-            </button>
-            <button
-              onClick={() => setFilter('completed')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === 'completed'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-            >
-              Completed
-            </button>
-            <button
-              onClick={() => setFilter('cancelled')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === 'cancelled'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-            >
-              Cancelled
-            </button>
-            <button
-              onClick={() => setFilter('no-show')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === 'no-show'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-            >
-              No Show
-            </button>
+              >
+                <span>{emoji}</span>
+                {label}
+              </button>
+            ))}
           </div>
         </div>
 
         {/* Appointments List */}
-        <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
           {filteredAppointments.length === 0 ? (
-            <div className="p-8 text-center">
-              <div className="text-gray-400 text-6xl mb-4">📅</div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No appointments found</h3>
-              <p className="text-gray-600">You don't have any {filter !== 'all' ? filter : ''} appointments.</p>
+            <div className="p-12 text-center">
+              <div className="text-8xl mb-6">📅</div>
+              <h3 className="text-2xl font-semibold text-gray-900 mb-3">No Appointments Found</h3>
+              <p className="text-gray-600 text-lg mb-6">
+                {filter !== 'all' 
+                  ? `You don't have any ${filter} appointments at the moment.`
+                  : "You don't have any appointments scheduled yet."
+                }
+              </p>
+              <div className="text-4xl opacity-50">😊</div>
             </div>
           ) : (
-            <div className="divide-y divide-gray-200">
+            <div className="divide-y divide-gray-100">
               {filteredAppointments.map(appointment => (
-                <div key={appointment._id} className="p-6 hover:bg-gray-50 transition duration-200">
-                  <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between">
-                    {/* Appointment Info */}
+                <div key={appointment._id} className="p-6 hover:bg-gray-50 transition duration-200 group">
+                  <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+                    
+                    {/* Patient Info */}
                     <div className="flex-1">
-                      <div className="flex items-start justify-between mb-3">
-                        <div>
-                          <h3 className="text-lg font-semibold text-gray-900">
-                            {appointment.patientId?.userId?.name || 'N/A'}
-                          </h3>
-                          <p className="text-gray-600">
-                            {appointment.patientId?.userId?.dateOfBirth
-                              ? `${calculateAge(appointment.patientId.userId.dateOfBirth)} years`
-                              : 'Age N/A'} • {appointment.patientId?.userId?.gender || 'Gender N/A'}
-                          </p>
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-lg">
+                            {appointment.patientId?.userId?.name?.charAt(0) || 'P'}
+                          </div>
+                          <div>
+                            <h3 className="text-xl font-semibold text-gray-900">
+                              {appointment.patientId?.userId?.name || 'Unknown Patient'}
+                            </h3>
+                            <p className="text-gray-600">
+                              {appointment.patientId?.userId?.dateOfBirth
+                                ? `${calculateAge(appointment.patientId.userId.dateOfBirth)} years`
+                                : 'Age not specified'} • {appointment.patientId?.userId?.gender || 'Gender not specified'}
+                            </p>
+                          </div>
                         </div>
-                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(appointment.status)}`}>
-                          {appointment.status}
-                        </span>
+                        <div className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium ${getStatusColor(appointment.status)}`}>
+                          <span>{getStatusIcon(appointment.status)}</span>
+                          <span className="capitalize">{appointment.status}</span>
+                        </div>
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600 mb-3">
-                        <div>
-                          <span className="font-medium">Date & Time:</span>{' '}
-                          {new Date(appointment.appointmentDate).toLocaleDateString()} at {appointment.appointmentTime}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-gray-600">
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">📅</span>
+                          <span>{new Date(appointment.appointmentDate).toLocaleDateString('en-US', { 
+                            weekday: 'short', 
+                            year: 'numeric', 
+                            month: 'short', 
+                            day: 'numeric' 
+                          })}</span>
                         </div>
-                        <div>
-                          <span className="font-medium">Slot:</span> {appointment.timeSlot}
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">⏰</span>
+                          <span>{appointment.appointmentTime} • {appointment.timeSlot}</span>
                         </div>
-                        <div className="md:col-span-2">
-                          <span className="font-medium">Reason:</span> {appointment.reason || 'No reason provided'}
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">🎯</span>
+                          <span>{appointment.reason || 'General Consultation'}</span>
                         </div>
                       </div>
                     </div>
 
                     {/* Actions */}
-                    <div className="mt-4 lg:mt-0 lg:ml-6 flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-3 lg:justify-end">
                       {appointment.status === 'scheduled' && (
                         <>
                           <button
                             onClick={() => handleStatusUpdate(appointment._id, 'confirmed')}
-                            className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-purple-700 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex items-center gap-2 bg-green-500 text-white px-5 py-2.5 rounded-xl font-medium hover:bg-green-600 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                             disabled={isUpdating}
                           >
-                            {isUpdating ? 'Updating...' : '✓ Confirm'}
+                            <span>✅</span>
+                            {isUpdating ? 'Confirming...' : 'Confirm'}
                           </button>
                           <button
                             onClick={() => handleStatusUpdate(appointment._id, 'cancelled')}
-                            className="bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-700 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex items-center gap-2 bg-red-500 text-white px-5 py-2.5 rounded-xl font-medium hover:bg-red-600 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                             disabled={isUpdating}
                           >
-                            {isUpdating ? 'Updating...' : '✕ Cancel'}
+                            <span>❌</span>
+                            {isUpdating ? 'Cancelling...' : 'Cancel'}
                           </button>
                         </>
                       )}
@@ -408,24 +433,19 @@ const DoctorAppointments = () => {
                         <>
                           <button
                             onClick={() => handleCreateMedicalRecord(appointment)}
-                            className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-xl font-medium hover:bg-blue-700 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                             disabled={isUpdating}
                           >
-                            🩺 Start Consultation
+                            <span>🩺</span>
+                            Start Consultation
                           </button>
                           <button
                             onClick={() => handleStatusUpdate(appointment._id, 'no-show')}
-                            className="bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-orange-700 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex items-center gap-2 bg-orange-500 text-white px-5 py-2.5 rounded-xl font-medium hover:bg-orange-600 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                             disabled={isUpdating}
                           >
-                            {isUpdating ? 'Updating...' : '👻 No Show'}
-                          </button>
-                          <button
-                            onClick={() => handleStatusUpdate(appointment._id, 'cancelled')}
-                            className="bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-700 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                            disabled={isUpdating}
-                          >
-                            {isUpdating ? 'Updating...' : '✕ Cancel'}
+                            <span>👻</span>
+                            No Show
                           </button>
                         </>
                       )}
@@ -433,15 +453,16 @@ const DoctorAppointments = () => {
                       {appointment.status === 'completed' && (
                         <button
                           onClick={() => handleCreateMedicalRecord(appointment)}
-                          className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition duration-200"
+                          className="flex items-center gap-2 bg-purple-600 text-white px-5 py-2.5 rounded-xl font-medium hover:bg-purple-700 transition duration-200 shadow-sm"
                         >
-                          📄 View Medical Record
+                          <span>📄</span>
+                          Add-Transcript
                         </button>
                       )}
 
                       {(appointment.status === 'cancelled' || appointment.status === 'no-show') && (
-                        <div className="text-gray-500 text-sm italic py-2">
-                          No actions available
+                        <div className="text-gray-500 text-sm italic py-2 px-4 bg-gray-50 rounded-lg">
+                          Consultation completed
                         </div>
                       )}
                     </div>
@@ -454,21 +475,34 @@ const DoctorAppointments = () => {
 
         {/* Medical Record Modal */}
         {showMedicalRecord && selectedAppointment && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg shadow-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="p-6">
-                <div className="flex justify-between items-center mb-4">
+          <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
+            <div className="bg-white rounded-3xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-8">
+                {/* Header */}
+                <div className="flex justify-between items-start mb-6">
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900">
+                    <h3 className="text-2xl font-bold text-gray-900">
                       {selectedAppointment.status === 'completed' ? 'Medical Record' : 'Create Medical Record'}
                     </h3>
-                    <p className="text-sm text-gray-600 mt-1">
-                      Patient: {selectedAppointment.patientId?.userId?.name || 'N/A'}
-                    </p>
+                    <div className="flex items-center gap-3 mt-2">
+                      <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold">
+                        {selectedAppointment.patientId?.userId?.name?.charAt(0) || 'P'}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-gray-900">
+                          {selectedAppointment.patientId?.userId?.name || 'Unknown Patient'}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          {selectedAppointment.patientId?.userId?.dateOfBirth
+                            ? `${calculateAge(selectedAppointment.patientId.userId.dateOfBirth)} years`
+                            : 'Age not specified'} • {selectedAppointment.patientId?.userId?.gender || 'Gender not specified'}
+                        </p>
+                      </div>
+                    </div>
                   </div>
                   <button
                     onClick={() => setShowMedicalRecord(false)}
-                    className="text-gray-400 hover:text-gray-600 text-xl"
+                    className="text-gray-400 hover:text-gray-600 text-2xl p-2 hover:bg-gray-100 rounded-xl transition duration-200"
                   >
                     ✕
                   </button>
@@ -477,37 +511,41 @@ const DoctorAppointments = () => {
                 <div className="space-y-6">
                   {/* Diagnosis */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Diagnosis *</label>
+                    <label className="block text-lg font-semibold text-gray-900 mb-3">
+                      Diagnosis <span className="text-red-500">*</span>
+                    </label>
                     <textarea
                       value={medicalRecordData.diagnosis}
                       onChange={(e) => handleMedicalRecordChange('diagnosis', e.target.value)}
-                      placeholder="Enter diagnosis..."
+                      placeholder="Enter primary diagnosis and findings..."
                       rows="3"
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full border-2 border-gray-200 rounded-2xl px-4 py-3 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition duration-200 resize-none"
                       required
                     />
                   </div>
 
                   {/* Symptoms */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Symptoms</label>
-                    <div className="space-y-2">
+                    <label className="block text-lg font-semibold text-gray-900 mb-3">
+                      Symptoms
+                    </label>
+                    <div className="space-y-3">
                       {medicalRecordData.symptoms.map((symptom, index) => (
-                        <div key={index} className="flex gap-2">
+                        <div key={index} className="flex gap-3">
                           <input
                             type="text"
                             value={symptom}
                             onChange={(e) => handleSymptomChange(index, e.target.value)}
-                            placeholder="Symptom description"
-                            className="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Describe symptom..."
+                            className="flex-1 border-2 border-gray-200 rounded-2xl px-4 py-3 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition duration-200"
                           />
                           {medicalRecordData.symptoms.length > 1 && (
                             <button
                               type="button"
                               onClick={() => removeSymptom(index)}
-                              className="bg-red-100 text-red-600 px-3 rounded-lg hover:bg-red-200 transition duration-200"
+                              className="bg-red-50 text-red-600 px-4 rounded-2xl hover:bg-red-100 transition duration-200 font-semibold"
                             >
-                              ✕
+                              Remove
                             </button>
                           )}
                         </div>
@@ -515,58 +553,61 @@ const DoctorAppointments = () => {
                       <button
                         type="button"
                         onClick={addSymptom}
-                        className="bg-green-100 text-green-600 px-3 py-2 rounded-lg text-sm hover:bg-green-200 transition duration-200"
+                        className="bg-green-50 text-green-600 px-4 py-3 rounded-2xl text-sm font-semibold hover:bg-green-100 transition duration-200 flex items-center gap-2"
                       >
-                        + Add Symptom
+                        <span>+</span>
+                        Add Symptom
                       </button>
                     </div>
                   </div>
 
                   {/* Prescription */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Prescription</label>
-                    <div className="space-y-3">
+                    <label className="block text-lg font-semibold text-gray-900 mb-3">
+                      Prescription
+                    </label>
+                    <div className="space-y-4">
                       {medicalRecordData.prescription.map((med, index) => (
-                        <div key={index} className="border border-gray-200 rounded-lg p-3">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                        <div key={index} className="border-2 border-gray-200 rounded-2xl p-4 bg-gray-50">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                             <div>
-                              <label className="block text-xs font-medium text-gray-600 mb-1">Medicine Name *</label>
+                              <label className="block text-sm font-semibold text-gray-700 mb-2">Medicine Name *</label>
                               <input
                                 type="text"
                                 value={med.medicine}
                                 onChange={(e) => handlePrescriptionChange(index, 'medicine', e.target.value)}
-                                placeholder="Medicine name"
-                                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                placeholder="Enter medicine name"
+                                className="w-full border border-gray-300 rounded-xl px-3 py-2 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition duration-200"
                               />
                             </div>
                             <div>
-                              <label className="block text-xs font-medium text-gray-600 mb-1">Dosage *</label>
+                              <label className="block text-sm font-semibold text-gray-700 mb-2">Dosage *</label>
                               <input
                                 type="text"
                                 value={med.dosage}
                                 onChange={(e) => handlePrescriptionChange(index, 'dosage', e.target.value)}
                                 placeholder="e.g., 500mg"
-                                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full border border-gray-300 rounded-xl px-3 py-2 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition duration-200"
                               />
                             </div>
                             <div>
-                              <label className="block text-xs font-medium text-gray-600 mb-1">Frequency</label>
+                              <label className="block text-sm font-semibold text-gray-700 mb-2">Frequency</label>
                               <input
                                 type="text"
                                 value={med.frequency}
                                 onChange={(e) => handlePrescriptionChange(index, 'frequency', e.target.value)}
                                 placeholder="e.g., Twice daily"
-                                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full border border-gray-300 rounded-xl px-3 py-2 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition duration-200"
                               />
                             </div>
                             <div>
-                              <label className="block text-xs font-medium text-gray-600 mb-1">Duration</label>
+                              <label className="block text-sm font-semibold text-gray-700 mb-2">Duration</label>
                               <input
                                 type="text"
                                 value={med.duration}
                                 onChange={(e) => handlePrescriptionChange(index, 'duration', e.target.value)}
                                 placeholder="e.g., 5 days"
-                                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full border border-gray-300 rounded-xl px-3 py-2 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition duration-200"
                               />
                             </div>
                           </div>
@@ -574,7 +615,7 @@ const DoctorAppointments = () => {
                             <button
                               type="button"
                               onClick={() => removePrescription(index)}
-                              className="bg-red-100 text-red-600 px-3 py-1 rounded text-sm hover:bg-red-200 transition duration-200"
+                              className="bg-red-50 text-red-600 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-red-100 transition duration-200"
                             >
                               Remove Medicine
                             </button>
@@ -584,33 +625,36 @@ const DoctorAppointments = () => {
                       <button
                         type="button"
                         onClick={addPrescription}
-                        className="bg-green-100 text-green-600 px-3 py-2 rounded-lg text-sm hover:bg-green-200 transition duration-200"
+                        className="bg-green-50 text-green-600 px-4 py-3 rounded-2xl text-sm font-semibold hover:bg-green-100 transition duration-200 flex items-center gap-2"
                       >
-                        + Add Medicine
+                        <span>+</span>
+                        Add Medicine
                       </button>
                     </div>
                   </div>
 
                   {/* Tests Recommended */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Tests Recommended</label>
-                    <div className="space-y-2">
+                    <label className="block text-lg font-semibold text-gray-900 mb-3">
+                      Recommended Tests
+                    </label>
+                    <div className="space-y-3">
                       {medicalRecordData.testsRecommended.map((test, index) => (
-                        <div key={index} className="flex gap-2">
+                        <div key={index} className="flex gap-3">
                           <input
                             type="text"
                             value={test}
                             onChange={(e) => handleTestChange(index, e.target.value)}
-                            placeholder="Test name"
-                            className="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Enter test name..."
+                            className="flex-1 border-2 border-gray-200 rounded-2xl px-4 py-3 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition duration-200"
                           />
                           {medicalRecordData.testsRecommended.length > 1 && (
                             <button
                               type="button"
                               onClick={() => removeTest(index)}
-                              className="bg-red-100 text-red-600 px-3 rounded-lg hover:bg-red-200 transition duration-200"
+                              className="bg-red-50 text-red-600 px-4 rounded-2xl hover:bg-red-100 transition duration-200 font-semibold"
                             >
-                              ✕
+                              Remove
                             </button>
                           )}
                         </div>
@@ -618,40 +662,51 @@ const DoctorAppointments = () => {
                       <button
                         type="button"
                         onClick={addTest}
-                        className="bg-green-100 text-green-600 px-3 py-2 rounded-lg text-sm hover:bg-green-200 transition duration-200"
+                        className="bg-green-50 text-green-600 px-4 py-3 rounded-2xl text-sm font-semibold hover:bg-green-100 transition duration-200 flex items-center gap-2"
                       >
-                        + Add Test
+                        <span>+</span>
+                        Add Test
                       </button>
                     </div>
                   </div>
 
                   {/* Notes */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Additional Notes</label>
+                    <label className="block text-lg font-semibold text-gray-900 mb-3">
+                      Additional Notes
+                    </label>
                     <textarea
                       value={medicalRecordData.notes}
                       onChange={(e) => handleMedicalRecordChange('notes', e.target.value)}
-                      placeholder="Any additional notes or recommendations..."
+                      placeholder="Any additional recommendations, follow-up instructions, or special notes..."
                       rows="3"
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full border-2 border-gray-200 rounded-2xl px-4 py-3 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition duration-200 resize-none"
                     />
                   </div>
 
-                  <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+                  {/* Action Buttons */}
+                  <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
                     <button
                       type="button"
                       onClick={() => setShowMedicalRecord(false)}
-                      className="bg-gray-100 text-gray-700 px-6 py-2 rounded-lg font-medium hover:bg-gray-200 transition duration-200"
+                      className="bg-gray-100 text-gray-700 px-8 py-3 rounded-2xl font-semibold hover:bg-gray-200 transition duration-200"
                     >
                       Cancel
                     </button>
                     <button
                       type="button"
                       onClick={handleMedicalRecordSubmit}
-                      className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="bg-gradient-to-br from-blue-600 to-purple-600 text-white px-8 py-3 rounded-2xl font-semibold hover:from-blue-700 hover:to-purple-700 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
                       disabled={isCreating}
                     >
-                      {isCreating ? 'Saving...' : (selectedAppointment.status === 'completed' ? 'Update Medical Record' : 'Save Medical Record')}
+                      {isCreating ? (
+                        <span className="flex items-center gap-2">
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          Saving...
+                        </span>
+                      ) : (
+                        selectedAppointment.status === 'completed' ? 'Update Record' : 'Save Medical Record'
+                      )}
                     </button>
                   </div>
                 </div>
