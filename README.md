@@ -21,7 +21,7 @@ A modern, full-featured **Clinic Management System** frontend built with **React
 ---
 
 ## ✨ Features
-
+a
 ### 👤 Patient
 - Register & login to a personal portal
 - Book appointments with available doctors
